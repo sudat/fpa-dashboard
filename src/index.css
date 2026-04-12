@@ -123,8 +123,113 @@
     }
   body {
     @apply bg-background text-foreground;
+    /* Japanese text rendering — proportionate spacing for CJK */
+    font-feature-settings: "palt";
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
     }
   html {
     @apply font-sans;
     }
+}
+
+/* ---------------------------------------------------------------------------
+ * FPA Dashboard — Visual Foundation Extensions
+ *
+ * These extend the Nova base theme with financial-specific semantic tokens,
+ * typography scale, and layout constants needed for the dashboard.
+ * The Nova base variables above are NOT modified — only extended.
+ * --------------------------------------------------------------------------- */
+
+:root {
+  /* ---- Financial semantic colors ---- */
+  --positive: oklch(0.527 0.150 160);        /* emerald-600 */
+  --positive-foreground: oklch(0.985 0 0);
+  --negative: oklch(0.577 0.200 25);          /* rose-600 */
+  --negative-foreground: oklch(0.985 0 0);
+  --positive-muted: oklch(0.95 0.04 160);     /* emerald-50 */
+  --negative-muted: oklch(0.95 0.04 25);      /* rose-50 */
+  --neutral-value: oklch(0.556 0 0);          /* same as muted-foreground */
+
+  /* ---- Table alternating rows ---- */
+  --table-stripe: oklch(0.98 0 0);            /* very subtle warm tint */
+  --table-stripe-dark: oklch(0.22 0 0);
+
+  /* ---- Sidebar ---- */
+  --sidebar-width: 220px;
+  --sidebar-collapsed-width: 48px;
+
+  /* ---- Comment panel ---- */
+  --comment-panel-width: 340px;
+
+  /* ---- Chart colors (financial palette) ---- */
+  --chart-positive: oklch(0.527 0.150 160);
+  --chart-negative: oklch(0.577 0.200 25);
+  --chart-accent: oklch(0.55 0.15 250);       /* blue accent for forecasts */
+  --chart-actual: oklch(0.45 0 0);            /* dark neutral for actuals */
+}
+
+.dark {
+  /* ---- Financial semantic colors (dark) ---- */
+  --positive: oklch(0.765 0.163 160);         /* emerald-400 */
+  --positive-foreground: oklch(0.145 0 0);
+  --negative: oklch(0.704 0.191 22);          /* rose-400 */
+  --negative-foreground: oklch(0.145 0 0);
+  --positive-muted: oklch(0.25 0.06 160);     /* emerald-950/30 */
+  --negative-muted: oklch(0.25 0.06 25);      /* rose-950/30 */
+  --neutral-value: oklch(0.708 0 0);
+}
+
+@layer utilities {
+  .text-page-title {
+    @apply text-xl font-semibold tracking-tight;
+  }
+
+  .text-section-header {
+    @apply text-base font-medium;
+  }
+
+  .text-table-header {
+    @apply text-xs font-medium uppercase tracking-wider text-muted-foreground;
+  }
+
+  .text-body {
+    @apply text-sm;
+  }
+
+  .text-meta {
+    @apply text-xs text-muted-foreground;
+  }
+
+  .text-financial {
+    @apply font-mono text-sm tabular-nums tracking-tight;
+  }
+
+  .text-financial-lg {
+    @apply font-mono text-2xl font-semibold tabular-nums tracking-tight;
+  }
+
+  .text-positive {
+    color: var(--positive);
+  }
+
+  .text-negative {
+    color: var(--negative);
+  }
+
+  .bg-positive-muted {
+    background-color: var(--positive-muted);
+  }
+
+  .bg-negative-muted {
+    background-color: var(--negative-muted);
+  }
+
+  .bg-table-stripe {
+    background-color: var(--table-stripe);
+  }
+
+  .dark .bg-table-stripe {
+    background-color: var(--table-stripe-dark);
+  }
 }

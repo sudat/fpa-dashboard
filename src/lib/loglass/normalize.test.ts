@@ -1,4 +1,4 @@
-import { describe, expect, test } from "bun:test";
+import { describe, expect, test } from "vitest";
 
 import {
   buildNormalizedRowKey,
@@ -16,7 +16,7 @@ describe("loglass normalization helpers", () => {
       periodType: "YTD",
     });
 
-    expect(createNormalizedPeriod(new Date("2026-02-01T00:00:00+09:00"), "単月")).toEqual({
+    expect(createNormalizedPeriod(new Date(2026, 1, 1), "単月")).toEqual({
       fiscalYear: 2026,
       month: 2,
       yearMonth: "2026-02",

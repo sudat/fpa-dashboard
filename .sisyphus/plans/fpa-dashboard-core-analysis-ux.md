@@ -200,7 +200,7 @@ Wave FINAL
 
 ## TODOs
 
-- [ ] **T1. Scaffold frontend workspace and test tooling**
+- [x] **T1. Scaffold frontend workspace and test tooling**
   - **Files**: Create `package.json`, `bun.lockb`, `tsconfig.json`, `vite.config.ts`, `vitest.config.ts`, `src/main.tsx`, `src/App.tsx`, `src/test/setup.ts`
   - **References**: `docs/prd/prd_fpa_dashboard_master.md` (target stack), background finding: repo has no implementation files yet
   - **Acceptance**:
@@ -211,7 +211,7 @@ Wave FINAL
     - Scenario: app shell boots locally without analysis content crashing
     - Scenario: missing env/deploy config produces explicit setup guidance, not silent failure
 
-- [ ] **T2. Establish GAS delivery/build pipeline**
+- [x] **T2. Establish GAS delivery/build pipeline**
   - **Files**: Create `appsscript.json`, `.clasp.json`, `scripts/` build helpers if needed, modify `vite.config.ts`
   - **References**: librarian GAS/Vite build guidance; `docs/prototype/Code_v2.gs` for GAS runtime expectations
   - **Acceptance**:
@@ -221,7 +221,7 @@ Wave FINAL
     - Scenario: inspect build output for GAS manifest + generated script/html artifacts
     - Scenario: invalid plugin config fails loudly during build
 
-- [ ] **T3. Define normalized data contract and fixtures**
+- [x] **T3. Define normalized data contract and fixtures**
   - **Files**: Create `src/lib/loglass/schema.ts`, `src/lib/loglass/types.ts`, `src/lib/fixtures/loglass-small.ts`, `src/lib/fixtures/loglass-large.ts`, tests under `src/lib/loglass/*.test.ts`
   - **References**: `docs/prd/prd_fpa_dashboard_master.md`, `docs/prototype/Code_v2.gs` lines around `_normalizePeriod`, `getComparisonData`, and CSV column mapping
   - **Acceptance**:
@@ -232,7 +232,7 @@ Wave FINAL
     - Scenario: small fixture passes schema validation and normalization snapshot tests
     - Scenario: malformed fixture (missing required columns / nonnumeric values) fails with actionable errors
 
-- [ ] **T4. Create shared schemas, formatting, and utility layer**
+- [x] **T4. Create shared schemas, formatting, and utility layer**
   - **Files**: Create `src/lib/format/currency.ts`, `src/lib/format/rate.ts`, `src/lib/ui/tokens.ts`, `src/lib/utils.ts`, associated tests
   - **Acceptance**:
     - formatting helpers encode current business display grammar
@@ -241,7 +241,7 @@ Wave FINAL
     - Scenario: negative/positive/zero formatting matches PRD expectations
     - Scenario: null/blank values render defined empty-state tokens
 
-- [ ] **T5. Build app shell and navigation skeleton**
+- [x] **T5. Build app shell and navigation skeleton**
   - **Files**: Create `src/features/layout/components/app-shell.tsx`, `src/features/layout/components/sidebar.tsx`, `src/features/layout/components/top-tabs.tsx`, `src/features/layout/components/time-axis-pills.tsx`, tests
   - **References**: `docs/prd/prd_fpa_dashboard_master.md` sections 7.2-7.3
   - **Acceptance**:
@@ -252,7 +252,7 @@ Wave FINAL
     - Scenario: desktop viewport shows shell layout correctly
     - Scenario: rapid tab switching does not reset unrelated state unexpectedly
 
-- [ ] **T6. Apply visual foundation from shadcn Base UI direction**
+- [x] **T6. Apply visual foundation from shadcn Base UI direction**
   - **Files**: Create `components.json`, `src/index.css`, `src/components/ui/*` baseline components, theme tokens/tests if present
   - **References**: user-selected shadcn Create Base UI direction, `docs/prototype/index.html` for prototype tokens only as loose aesthetic reference
   - **Acceptance**:
@@ -262,7 +262,7 @@ Wave FINAL
     - Scenario: shell looks medium-density and readable at desktop widths
     - Scenario: contrast and focus states remain clear in main navigation and tabs
 
-- [ ] **T7. Implement import normalization and dataset shaping logic**
+- [x] **T7. Implement import normalization and dataset shaping logic**
   - **Files**: Create `src/features/admin/lib/normalize-loglass.ts`, `src/features/admin/lib/grouping.ts`, tests
   - **References**: `docs/prototype/Code_v2.gs`, PRD data model, confirmed meeting flows
   - **Acceptance**:
@@ -272,7 +272,7 @@ Wave FINAL
     - Scenario: normalized output reproduces known fixture-derived totals
     - Scenario: duplicate/blank edge cases are handled deterministically
 
-- [ ] **T8. Implement derived selectors for summary, graphs, and tables**
+- [x] **T8. Implement derived selectors for summary, graphs, and tables**
   - **Files**: Create `src/features/analysis/lib/selectors.ts`, `src/features/analysis/lib/summary.ts`, `src/features/analysis/lib/trend.ts`, `src/features/analysis/lib/difference.ts`, tests
   - **Acceptance**:
     - summary rows, trend series, difference bars, and detail table rows reconcile from same source
@@ -281,7 +281,7 @@ Wave FINAL
     - Scenario: summary totals equal rolled-up detail totals for all three axes
     - Scenario: difference graph values match expected absolute-diff ordering
 
-- [ ] **T9. Implement global analysis state model**
+- [x] **T9. Implement global analysis state model**
   - **Files**: Create `src/features/analysis/state/use-analysis-state.ts`, `src/features/analysis/state/analysis-state.test.ts`
   - **Acceptance**:
     - selected top tab, time axis, metric mode, and weak-link target states are managed centrally
@@ -289,7 +289,7 @@ Wave FINAL
     - Scenario: switching time axis preserves active org tab
     - Scenario: weak-link state only affects intended view(s)
 
-- [ ] **T10. Create minimal auth/role boundary shell**
+- [x] **T10. Create minimal auth/role boundary shell**
   - **Files**: Create `src/features/auth/types.ts`, `src/features/auth/lib/permissions.ts`, `src/features/auth/components/role-gate.tsx`, tests
   - **Acceptance**:
     - admin-only `管理` path is gateable
@@ -298,7 +298,7 @@ Wave FINAL
     - Scenario: non-admin cannot open admin screen
     - Scenario: missing user context degrades safely
 
-- [ ] **T11. Build minimal admin shell**
+- [x] **T11. Build minimal admin shell**
   - **Files**: Create `src/features/admin/components/admin-page.tsx`, `src/features/admin/components/import-log.tsx`, `src/features/admin/components/master-diff-warning.tsx`, tests
   - **Acceptance**:
     - admin screen shows upload result log and master-diff warnings only
@@ -307,7 +307,7 @@ Wave FINAL
     - Scenario: admin sees import result log first, then warnings
     - Scenario: empty warning state is explicit and quiet
 
-- [ ] **T12. Create graph/table primitives and adapters**
+- [x] **T12. Create graph/table primitives and adapters**
   - **Files**: Create `src/features/analysis/components/shared/trend-chart.tsx`, `src/features/analysis/components/shared/difference-chart.tsx`, `src/features/analysis/components/shared/detail-table.tsx`, tests
   - **Acceptance**:
     - primitives accept selector outputs without view-specific hacks
@@ -315,7 +315,7 @@ Wave FINAL
     - Scenario: chart/table primitives render fixture data without runtime warnings
     - Scenario: extremely long labels truncate/tooltip safely
 
-- [ ] **T13. Implement major-account summary section**
+- [x] **T13. Implement major-account summary section**
   - **Files**: Create `src/features/analysis/components/summary/major-account-summary.tsx`, tests
   - **Acceptance**:
     - fixed major accounts render with 着地見込 / 前月見込 / 前年差 columns
@@ -323,7 +323,7 @@ Wave FINAL
     - Scenario: major-account summary reflects selected org tab and time axis
     - Scenario: summary fallback for empty data is explicit
 
-- [ ] **T14. Implement trend graph experience**
+- [x] **T14. Implement trend graph experience**
   - **Files**: Create/modify `trend-chart.tsx`, `src/features/analysis/components/trend-panel.tsx`, tests
   - **Acceptance**:
     - default secondary view is trend graph
@@ -333,7 +333,7 @@ Wave FINAL
     - Scenario: switching amount↔GMV ratio updates graph only, not unrelated views
     - Scenario: graph click does not trigger unintended navigation
 
-- [ ] **T15. Implement difference graph experience**
+- [x] **T15. Implement difference graph experience**
   - **Files**: Create `src/features/analysis/components/difference-panel.tsx`, modify `difference-chart.tsx`, tests
   - **Acceptance**:
     - horizontal bars, top ~5, absolute-diff order, good/bad colors
@@ -342,7 +342,7 @@ Wave FINAL
     - Scenario: 全社 uses business-unit bars, 事業部 uses detail-account bars
     - Scenario: sign colors and ordering remain correct with mixed positive/negative values
 
-- [ ] **T16. Implement detail table**
+- [x] **T16. Implement detail table**
   - **Files**: Modify/create `detail-table.tsx`, `src/features/analysis/components/detail-panel.tsx`, tests
   - **Acceptance**:
     - aggregate-account rows expand to detail accounts
@@ -351,7 +351,7 @@ Wave FINAL
     - Scenario: expand/collapse preserves scroll and surrounding context
     - Scenario: table values reconcile to summary/selector outputs
 
-- [ ] **T17. Compose analysis screen for 全社 and 各事業部**
+- [x] **T17. Compose analysis screen for 全社 and 各事業部**
   - **Files**: Create `src/features/analysis/pages/analysis-page.tsx`, `src/features/analysis/components/analysis-workspace.tsx`, tests
   - **Acceptance**:
     - same format used for 全社 and each 事業部
@@ -360,7 +360,7 @@ Wave FINAL
     - Scenario: switching org tabs retains common screen grammar
     - Scenario: top tabs scale to 10+ business units using horizontal scroll
 
-- [ ] **T18. Add deferred comment pane placeholder boundaries**
+- [x] **T18. Add deferred comment pane placeholder boundaries**
   - **Files**: Create `src/features/comments/components/comment-pane-shell.tsx`, tests
   - **Acceptance**:
     - right-side pane exists with read/placeholder structure
@@ -369,7 +369,7 @@ Wave FINAL
     - Scenario: comment pane renders timeline shell without blocking analysis interactions
     - Scenario: deferred markers are visible in placeholder states
 
-- [ ] **T19. Implement weak-link cross-view interactions**
+- [x] **T19. Implement weak-link cross-view interactions**
   - **Files**: Modify summary/difference/detail integration components, add tests
   - **Acceptance**:
     - summary account selection auto-updates trend graph only
@@ -378,7 +378,7 @@ Wave FINAL
     - Scenario: selecting summary account does not unexpectedly switch comments/table context
     - Scenario: difference graph click highlights correct detail row for a few seconds
 
-- [ ] **T20. Harden large-dataset performance**
+- [x] **T20. Harden large-dataset performance**
   - **Files**: Modify table/data-loading infrastructure, add performance tests/bench harness
   - **Acceptance**:
     - representative large fixture remains interactive
@@ -387,7 +387,7 @@ Wave FINAL
     - Scenario: large fixture tab switches remain within acceptable responsiveness
     - Scenario: scrolling stays smooth and memory usage does not spike catastrophically
 
-- [ ] **T21. Add loading/empty/error/accessibility polish**
+- [x] **T21. Add loading/empty/error/accessibility polish**
   - **Files**: Modify analysis/admin screens, add tests
   - **Acceptance**:
     - all main views have intentional loading, empty, and failure states
@@ -396,7 +396,7 @@ Wave FINAL
     - Scenario: partial data failure isolates broken panel without blanking entire screen
     - Scenario: keyboard-only navigation can reach tabs, pills, tables, and admin actions
 
-- [ ] **T22. Complete admin-to-analysis handoff and snapshot hooks**
+- [x] **T22. Complete admin-to-analysis handoff and snapshot hooks**
   - **Files**: Modify admin + analysis routing/state, add tests
   - **Acceptance**:
     - explicit `分析画面で確認` handoff exists
@@ -409,16 +409,16 @@ Wave FINAL
 
 ## Final Verification Wave
 
-- [ ] **F1. Plan Compliance Audit — oracle**
+- [x] **F1. Plan Compliance Audit — oracle**
   Verify implemented file set, IA, graph/table roles, and deferred-boundary markings against this plan and `docs/prd/prd_fpa_dashboard_master.md`.
 
-- [ ] **F2. Code Quality Review — unspecified-high**
+  - [x] **F2. Code Quality Review — unspecified-high**
   Run typecheck/build/tests; inspect changed files for over-abstraction, dead code, and scope leakage into deferred comment/review workflow.
 
-- [ ] **F3. Real Scenario QA — unspecified-high**
+  - [x] **F3. Real Scenario QA — unspecified-high**
   Execute representative scenarios with fixture data for 全社/事業部 tab switching, time-axis switching, trend graph behavior, difference graph weak-linking, detail table expansion, and admin handoff.
 
-- [ ] **F4. Scope Fidelity Check — deep**
+  - [x] **F4. Scope Fidelity Check — deep**
   Confirm that comment/FPA review UX remains deferred except for shell boundaries and that no AI/export/mobile expansion slipped into implementation.
 
 ---
