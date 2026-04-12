@@ -1,0 +1,1216 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+JP:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet" />
+  <style>
+    /* ========== shadcn-inspired design tokens ========== */
+    :root {
+      --bg: #fafafa;
+      --bg-card: #ffffff;
+      --bg-sidebar: #0f172a;
+      --bg-sidebar-hover: #1e293b;
+      --bg-sidebar-active: #334155;
+      --bg-muted: #f1f5f9;
+      --bg-accent: #eff6ff;
+      --border: #e2e8f0;
+      --border-strong: #cbd5e1;
+      --text: #0f172a;
+      --text-muted: #64748b;
+      --text-sidebar: #94a3b8;
+      --text-sidebar-active: #f8fafc;
+      --primary: #2563eb;
+      --primary-hover: #1d4ed8;
+      --positive: #16a34a;
+      --positive-bg: #f0fdf4;
+      --negative: #dc2626;
+      --negative-bg: #fef2f2;
+      --warning: #f59e0b;
+      --warning-bg: #fffbeb;
+      --radius: 8px;
+      --radius-sm: 6px;
+      --shadow-sm: 0 1px 2px rgba(0,0,0,.05);
+      --shadow: 0 1px 3px rgba(0,0,0,.1), 0 1px 2px rgba(0,0,0,.06);
+      --shadow-md: 0 4px 6px rgba(0,0,0,.07), 0 2px 4px rgba(0,0,0,.06);
+    }
+
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body {
+      font-family: 'Noto Sans JP', sans-serif;
+      background: var(--bg);
+      color: var(--text);
+      display: flex;
+      min-height: 100vh;
+      font-size: 14px;
+      line-height: 1.6;
+    }
+    .mono { font-family: 'JetBrains Mono', monospace; font-size: 13px; }
+
+    /* ========== Sidebar ========== */
+    .sidebar {
+      width: 240px;
+      min-height: 100vh;
+      background: var(--bg-sidebar);
+      color: var(--text-sidebar);
+      display: flex;
+      flex-direction: column;
+      position: fixed;
+      top: 0; left: 0; bottom: 0;
+      z-index: 40;
+      transition: transform .2s;
+    }
+    .sidebar-brand {
+      padding: 24px 20px 20px;
+      font-size: 15px;
+      font-weight: 600;
+      color: var(--text-sidebar-active);
+      letter-spacing: .02em;
+      border-bottom: 1px solid rgba(255,255,255,.08);
+    }
+    .sidebar-nav { padding: 12px 8px; flex: 1; }
+    .nav-item {
+      display: flex; align-items: center; gap: 10px;
+      padding: 10px 14px;
+      border-radius: var(--radius-sm);
+      cursor: pointer;
+      font-size: 13.5px;
+      font-weight: 400;
+      transition: background .15s, color .15s;
+      margin-bottom: 2px;
+      color: var(--text-sidebar);
+    }
+    .nav-item:hover { background: var(--bg-sidebar-hover); color: #e2e8f0; }
+    .nav-item.active {
+      background: var(--bg-sidebar-active);
+      color: var(--text-sidebar-active);
+      font-weight: 500;
+    }
+    .nav-item svg { width: 18px; height: 18px; opacity: .7; flex-shrink: 0; }
+    .nav-item.active svg { opacity: 1; }
+    .sidebar-footer {
+      padding: 16px 20px;
+      border-top: 1px solid rgba(255,255,255,.08);
+      font-size: 12px;
+      color: #475569;
+    }
+    .sidebar-user { color: #94a3b8; font-size: 13px; }
+
+    /* ========== Main ========== */
+    .main {
+      margin-left: 240px;
+      flex: 1;
+      min-height: 100vh;
+    }
+    .topbar {
+      height: 56px;
+      background: var(--bg-card);
+      border-bottom: 1px solid var(--border);
+      display: flex;
+      align-items: center;
+      padding: 0 28px;
+      gap: 16px;
+      position: sticky; top: 0; z-index: 30;
+    }
+    .topbar-title {
+      font-size: 15px;
+      font-weight: 600;
+    }
+    .content { padding: 24px 28px 48px; }
+
+    /* ========== Controls ========== */
+    .control-bar {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 12px;
+      align-items: end;
+      margin-bottom: 20px;
+      padding: 16px 20px;
+      background: var(--bg-card);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+    }
+    .control-group { display: flex; flex-direction: column; gap: 4px; }
+    .control-label {
+      font-size: 11.5px;
+      font-weight: 500;
+      color: var(--text-muted);
+      text-transform: uppercase;
+      letter-spacing: .05em;
+    }
+    select, input[type="file"] {
+      padding: 7px 12px;
+      border: 1px solid var(--border);
+      border-radius: var(--radius-sm);
+      font-size: 13px;
+      font-family: inherit;
+      background: #fff;
+      color: var(--text);
+      outline: none;
+      transition: border-color .15s;
+      min-width: 200px;
+    }
+    select:focus { border-color: var(--primary); }
+
+    /* ========== Buttons ========== */
+    .btn {
+      display: inline-flex; align-items: center; justify-content: center; gap: 6px;
+      padding: 8px 16px;
+      border-radius: var(--radius-sm);
+      font-size: 13px;
+      font-weight: 500;
+      font-family: inherit;
+      cursor: pointer;
+      border: 1px solid transparent;
+      transition: all .15s;
+    }
+    .btn-primary {
+      background: var(--primary); color: #fff; border-color: var(--primary);
+    }
+    .btn-primary:hover { background: var(--primary-hover); }
+    .btn-outline {
+      background: #fff; color: var(--text); border-color: var(--border);
+    }
+    .btn-outline:hover { background: var(--bg-muted); }
+    .btn-ghost {
+      background: transparent; color: var(--text-muted); border: none;
+    }
+    .btn-ghost:hover { background: var(--bg-muted); color: var(--text); }
+    .btn-sm { padding: 5px 10px; font-size: 12px; }
+    .btn:disabled { opacity: .5; cursor: not-allowed; }
+
+    /* ========== Cards ========== */
+    .card {
+      background: var(--bg-card);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      box-shadow: var(--shadow-sm);
+    }
+    .card-header {
+      padding: 16px 20px 12px;
+      border-bottom: 1px solid var(--border);
+    }
+    .card-title { font-size: 14px; font-weight: 600; }
+    .card-body { padding: 20px; }
+
+    /* ========== Score Cards (Dashboard) ========== */
+    .score-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(260px, 1fr));
+      gap: 12px;
+      margin-bottom: 24px;
+    }
+    .score-card {
+      background: var(--bg-card);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      padding: 18px 20px;
+      cursor: pointer;
+      transition: box-shadow .15s, border-color .15s;
+    }
+    .score-card:hover {
+      box-shadow: var(--shadow-md);
+      border-color: var(--border-strong);
+    }
+    .score-card-label {
+      font-size: 12px;
+      color: var(--text-muted);
+      font-weight: 500;
+      margin-bottom: 8px;
+    }
+    .score-card-value {
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 22px;
+      font-weight: 600;
+      margin-bottom: 10px;
+    }
+    .score-card-diffs {
+      display: flex; gap: 16px;
+      font-size: 12px;
+    }
+    .diff-item { display: flex; flex-direction: column; gap: 1px; }
+    .diff-label { color: var(--text-muted); font-size: 11px; }
+
+    /* ========== Data Table ========== */
+    .table-wrap {
+      background: var(--bg-card);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      overflow-x: auto;
+    }
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      font-size: 13px;
+    }
+    thead th {
+      text-align: left;
+      padding: 10px 14px;
+      font-weight: 600;
+      font-size: 11.5px;
+      color: var(--text-muted);
+      text-transform: uppercase;
+      letter-spacing: .04em;
+      background: var(--bg-muted);
+      border-bottom: 1px solid var(--border);
+      white-space: nowrap;
+      position: sticky; top: 0;
+    }
+    thead th.num { text-align: right; }
+    tbody td {
+      padding: 9px 14px;
+      border-bottom: 1px solid #f1f5f9;
+      vertical-align: middle;
+    }
+    tbody td.num {
+      text-align: right;
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 12.5px;
+    }
+    tbody tr { transition: background .1s; }
+    tbody tr:hover { background: var(--bg-accent); }
+    tbody tr.expandable { cursor: pointer; }
+    tbody tr.drill-row td {
+      background: #f8fafc;
+      padding-left: 36px;
+      font-size: 12.5px;
+    }
+    tbody tr.drill-row:last-child td {
+      border-bottom: 2px solid var(--border);
+    }
+
+    /* ========== Badges ========== */
+    .badge {
+      display: inline-flex; align-items: center; gap: 3px;
+      padding: 2px 8px;
+      border-radius: 9999px;
+      font-size: 11.5px;
+      font-weight: 500;
+    }
+    .badge-positive { background: var(--positive-bg); color: var(--positive); }
+    .badge-negative { background: var(--negative-bg); color: var(--negative); }
+    .badge-neutral  { background: var(--bg-muted); color: var(--text-muted); }
+    .badge-status-empty   { background: #fef2f2; color: #b91c1c; }
+    .badge-status-entered { background: #fffbeb; color: #b45309; }
+    .badge-status-confirmed { background: #f0fdf4; color: #15803d; }
+
+    /* ========== Comment Section ========== */
+    .comment-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(420px, 1fr));
+      gap: 16px;
+    }
+    .comment-card {
+      background: var(--bg-card);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      overflow: hidden;
+    }
+    .comment-card-header {
+      padding: 14px 18px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      background: var(--bg-muted);
+      border-bottom: 1px solid var(--border);
+    }
+    .comment-card-dept { font-weight: 600; font-size: 14px; }
+    .comment-card-body { padding: 16px 18px; }
+    textarea {
+      width: 100%;
+      min-height: 120px;
+      padding: 10px 12px;
+      border: 1px solid var(--border);
+      border-radius: var(--radius-sm);
+      font-size: 13.5px;
+      font-family: inherit;
+      line-height: 1.7;
+      resize: vertical;
+      outline: none;
+      transition: border-color .15s;
+    }
+    textarea:focus { border-color: var(--primary); }
+    textarea:disabled { background: var(--bg-muted); color: var(--text-muted); }
+    .comment-meta {
+      margin-top: 8px;
+      font-size: 11.5px;
+      color: var(--text-muted);
+    }
+    .comment-actions {
+      padding: 10px 18px 14px;
+      display: flex;
+      justify-content: flex-end;
+      gap: 8px;
+    }
+
+    /* ========== Upload ========== */
+    .upload-zone {
+      border: 2px dashed var(--border);
+      border-radius: var(--radius);
+      padding: 40px 20px;
+      text-align: center;
+      cursor: pointer;
+      transition: border-color .15s, background .15s;
+    }
+    .upload-zone:hover, .upload-zone.dragover {
+      border-color: var(--primary);
+      background: var(--bg-accent);
+    }
+    .upload-zone-label {
+      font-size: 14px;
+      color: var(--text-muted);
+      margin-top: 8px;
+    }
+
+    /* ========== Modal ========== */
+    .modal-overlay {
+      position: fixed;
+      inset: 0;
+      background: rgba(0,0,0,.4);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      z-index: 100;
+      opacity: 0;
+      pointer-events: none;
+      transition: opacity .2s;
+    }
+    .modal-overlay.open { opacity: 1; pointer-events: auto; }
+    .modal {
+      background: var(--bg-card);
+      border-radius: var(--radius);
+      box-shadow: 0 20px 60px rgba(0,0,0,.15);
+      width: 90%;
+      max-width: 720px;
+      max-height: 80vh;
+      overflow-y: auto;
+    }
+    .modal-header {
+      padding: 18px 24px;
+      border-bottom: 1px solid var(--border);
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+    }
+    .modal-title { font-weight: 600; font-size: 15px; }
+    .modal-body { padding: 20px 24px; }
+    .modal-footer {
+      padding: 14px 24px;
+      border-top: 1px solid var(--border);
+      display: flex;
+      justify-content: flex-end;
+      gap: 8px;
+    }
+
+    /* ========== Loader ========== */
+    .spinner {
+      width: 20px; height: 20px;
+      border: 2px solid var(--border);
+      border-top-color: var(--primary);
+      border-radius: 50%;
+      animation: spin .6s linear infinite;
+    }
+    @keyframes spin { to { transform: rotate(360deg); } }
+    .loading-overlay {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 10px;
+      padding: 60px 20px;
+      color: var(--text-muted);
+      font-size: 13px;
+    }
+
+    /* ========== Toast ========== */
+    .toast-container {
+      position: fixed;
+      bottom: 24px; right: 24px;
+      z-index: 200;
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+    }
+    .toast {
+      padding: 12px 18px;
+      background: var(--bg-sidebar);
+      color: #e2e8f0;
+      border-radius: var(--radius-sm);
+      font-size: 13px;
+      box-shadow: 0 8px 24px rgba(0,0,0,.2);
+      animation: slideUp .3s;
+    }
+    .toast-error { background: #991b1b; }
+    @keyframes slideUp {
+      from { opacity: 0; transform: translateY(12px); }
+      to { opacity: 1; transform: translateY(0); }
+    }
+
+    /* ========== Utility ========== */
+    .hidden { display: none !important; }
+    .text-positive { color: var(--positive); }
+    .text-negative { color: var(--negative); }
+    .text-muted { color: var(--text-muted); }
+    .text-sm { font-size: 12px; }
+    .mt-4 { margin-top: 16px; }
+    .mb-4 { margin-bottom: 16px; }
+    .gap-2 { gap: 8px; }
+    .flex { display: flex; }
+    .items-center { align-items: center; }
+    .justify-between { justify-content: space-between; }
+    .empty-state {
+      text-align: center;
+      padding: 60px 20px;
+      color: var(--text-muted);
+    }
+  </style>
+</head>
+<body>
+
+<!-- ==================== Sidebar ==================== -->
+<aside class="sidebar" id="sidebar">
+  <div class="sidebar-brand">予実管理</div>
+  <nav class="sidebar-nav">
+    <div class="nav-item active" data-page="dashboard" onclick="navigate('dashboard')">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="7" height="7" rx="1"/><rect x="14" y="3" width="7" height="7" rx="1"/><rect x="3" y="14" width="7" height="7" rx="1"/><rect x="14" y="14" width="7" height="7" rx="1"/></svg>
+      ダッシュボード
+    </div>
+    <div class="nav-item" data-page="monthly" onclick="navigate('monthly')">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 3v18h18"/><path d="M7 16l4-8 4 4 4-6"/></svg>
+      単月度分析
+    </div>
+    <div class="nav-item" data-page="forecast" onclick="navigate('forecast')">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 3"/></svg>
+      着地見込分析
+    </div>
+    <div class="nav-item" data-page="comments" onclick="navigate('comments')">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15a2 2 0 01-2 2H7l-4 4V5a2 2 0 012-2h14a2 2 0 012 2z"/></svg>
+      コメント管理
+    </div>
+    <div class="nav-item hidden" data-page="admin" id="nav-admin" onclick="navigate('admin')">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 2L2 7l10 5 10-5-10-5z"/><path d="M2 17l10 5 10-5"/><path d="M2 12l10 5 10-5"/></svg>
+      データ管理
+    </div>
+  </nav>
+  <div class="sidebar-footer">
+    <div class="sidebar-user" id="sidebar-user">読込中...</div>
+  </div>
+</aside>
+
+<!-- ==================== Main ==================== -->
+<div class="main">
+  <header class="topbar">
+    <h1 class="topbar-title" id="topbar-title">ダッシュボード</h1>
+  </header>
+  <div class="content" id="content">
+    <div class="loading-overlay" id="global-loader">
+      <div class="spinner"></div>
+      <span>読み込み中...</span>
+    </div>
+  </div>
+</div>
+
+<!-- ==================== Modal (汎用) ==================== -->
+<div class="modal-overlay" id="modal-overlay" onclick="closeModal(event)">
+  <div class="modal" id="modal">
+    <div class="modal-header">
+      <span class="modal-title" id="modal-title"></span>
+      <button class="btn btn-ghost btn-sm" onclick="closeModal()">✕</button>
+    </div>
+    <div class="modal-body" id="modal-body"></div>
+    <div class="modal-footer" id="modal-footer"></div>
+  </div>
+</div>
+
+<!-- ==================== Toast ==================== -->
+<div class="toast-container" id="toast-container"></div>
+
+<!-- ==================== JavaScript ==================== -->
+<script>
+// ========================================================
+// State
+// ========================================================
+const state = {
+  user: null,
+  periods: [],
+  scenarios: [],
+  currentPage: 'dashboard',
+  // selections
+  selectedPeriod: '',
+  selectedForecastScenario: '',
+  selectedCompareScenario: '',
+  // drill-through
+  expandedAccount: null,
+};
+
+// ========================================================
+// Init
+// ========================================================
+window.addEventListener('DOMContentLoaded', () => {
+  run(google.script.run, 'getCurrentUser').then(user => {
+    state.user = user;
+    document.getElementById('sidebar-user').textContent = user.name + '（' + user.role + '）';
+    if (user.role === '管理者') {
+      document.getElementById('nav-admin').classList.remove('hidden');
+    }
+    return Promise.all([
+      run(google.script.run, 'getPeriods'),
+      run(google.script.run, 'getScenarios'),
+    ]);
+  }).then(([periods, scenarios]) => {
+    state.periods = periods;
+    state.scenarios = scenarios;
+    if (periods.length > 0) state.selectedPeriod = periods[periods.length - 1];
+    // 見込シナリオのデフォルト: "実績"以外で最初に見つかるもの
+    const nonActual = scenarios.filter(s => s !== '実績');
+    state.selectedForecastScenario = nonActual.length > 0 ? nonActual[0] : '';
+    state.selectedCompareScenario = nonActual.length > 0 ? nonActual[0] : '';
+    navigate('dashboard');
+  }).catch(err => {
+    showToast('初期化に失敗: ' + err, true);
+  });
+});
+
+// ========================================================
+// GAS Runner (Promise wrapper)
+// ========================================================
+function run(runner, fnName, ...args) {
+  return new Promise((resolve, reject) => {
+    let r = runner.withSuccessHandler(resolve).withFailureHandler(reject);
+    r[fnName](...args);
+  });
+}
+
+// ========================================================
+// Navigation
+// ========================================================
+function navigate(page) {
+  state.currentPage = page;
+  state.expandedAccount = null;
+
+  // sidebar
+  document.querySelectorAll('.nav-item').forEach(el => {
+    el.classList.toggle('active', el.dataset.page === page);
+  });
+
+  const titles = {
+    dashboard: 'ダッシュボード',
+    monthly: '単月度分析',
+    forecast: '着地見込分析',
+    comments: 'コメント管理',
+    admin: 'データ管理',
+  };
+  document.getElementById('topbar-title').textContent = titles[page] || '';
+
+  const content = document.getElementById('content');
+  content.innerHTML = '<div class="loading-overlay"><div class="spinner"></div><span>読み込み中...</span></div>';
+
+  switch (page) {
+    case 'dashboard': renderDashboard(); break;
+    case 'monthly':   renderMonthly(); break;
+    case 'forecast':  renderForecast(); break;
+    case 'comments':  renderComments(); break;
+    case 'admin':     renderAdmin(); break;
+  }
+}
+
+// ========================================================
+// ① Dashboard
+// ========================================================
+function renderDashboard() {
+  const content = document.getElementById('content');
+
+  const controlsHtml = `
+    <div class="control-bar">
+      <div class="control-group">
+        <span class="control-label">対象月度</span>
+        ${periodSelect('dash-period', state.selectedPeriod)}
+      </div>
+      <div class="control-group">
+        <span class="control-label">見込シナリオ（比較）</span>
+        ${scenarioSelect('dash-forecast', state.selectedForecastScenario)}
+      </div>
+      <button class="btn btn-primary" onclick="loadDashboard()">表示</button>
+    </div>
+    <div id="dash-cards"></div>
+  `;
+  content.innerHTML = controlsHtml;
+  loadDashboard();
+}
+
+function loadDashboard() {
+  const period = document.getElementById('dash-period').value;
+  const forecast = document.getElementById('dash-forecast').value;
+  state.selectedPeriod = period;
+  state.selectedForecastScenario = forecast;
+
+  const container = document.getElementById('dash-cards');
+  container.innerHTML = '<div class="loading-overlay"><div class="spinner"></div><span>集計中...</span></div>';
+
+  run(google.script.run, 'getDashboardData', period, forecast)
+    .then(data => {
+      if (!data || data.length === 0) {
+        container.innerHTML = '<div class="empty-state">データがありません</div>';
+        return;
+      }
+      container.innerHTML = '<div class="score-grid">' + data.map(d => `
+        <div class="score-card" onclick="drillFromDash('${esc(d.account)}')">
+          <div class="score-card-label">${esc(d.account)}</div>
+          <div class="score-card-value">${fmtAmount(d.actual)}</div>
+          <div class="score-card-diffs">
+            <div class="diff-item">
+              <span class="diff-label">vs 見込</span>
+              ${diffBadge(d.forecastDiff, d.forecastDiffRate)}
+            </div>
+            <div class="diff-item">
+              <span class="diff-label">vs 前年</span>
+              ${diffBadge(d.priorYearDiff, d.priorYearDiffRate)}
+            </div>
+          </div>
+        </div>
+      `).join('') + '</div>';
+    })
+    .catch(err => showToast('ダッシュボード取得エラー: ' + err, true));
+}
+
+function drillFromDash(account) {
+  state.expandedAccount = account;
+  navigate('monthly');
+}
+
+// ========================================================
+// ② Monthly Analysis
+// ========================================================
+function renderMonthly() {
+  renderComparisonPage('monthly', {
+    baseLabel: '実績',
+    compareLabel: '見込',
+    priorLabel: '前年実績',
+    getBaseScenario: () => '実績',
+  });
+}
+
+// ========================================================
+// ③ Forecast Analysis
+// ========================================================
+function renderForecast() {
+  renderComparisonPage('forecast', {
+    baseLabel: '当月見込',
+    compareLabel: '前月見込',
+    priorLabel: '前年実績',
+    getBaseScenario: () => document.getElementById('comp-base-scenario')?.value || state.selectedForecastScenario,
+    showBaseSelector: true,
+  });
+}
+
+function renderComparisonPage(pageId, config) {
+  const content = document.getElementById('content');
+
+  let controlsHtml = `<div class="control-bar">
+    <div class="control-group">
+      <span class="control-label">対象月度</span>
+      ${periodSelect('comp-period', state.selectedPeriod)}
+    </div>`;
+
+  if (config.showBaseSelector) {
+    controlsHtml += `
+    <div class="control-group">
+      <span class="control-label">基準シナリオ</span>
+      ${scenarioSelect('comp-base-scenario', state.selectedForecastScenario)}
+    </div>`;
+  }
+
+  controlsHtml += `
+    <div class="control-group">
+      <span class="control-label">${config.compareLabel}シナリオ</span>
+      ${scenarioSelect('comp-compare', state.selectedCompareScenario)}
+    </div>
+    <button class="btn btn-primary" onclick="loadComparison('${pageId}', ${JSON.stringify(config).replace(/"/g, '&quot;')})">表示</button>
+  </div>
+  <div id="comp-table"></div>`;
+
+  content.innerHTML = controlsHtml;
+  loadComparison(pageId, config);
+}
+
+function loadComparison(pageId, config) {
+  const period = document.getElementById('comp-period').value;
+  const compareScenario = document.getElementById('comp-compare').value;
+  const baseScenario = config.getBaseScenario ? config.getBaseScenario() : '実績';
+  const priorPeriod = shiftYear(period, -1);
+
+  state.selectedPeriod = period;
+  state.selectedCompareScenario = compareScenario;
+
+  const container = document.getElementById('comp-table');
+  container.innerHTML = '<div class="loading-overlay"><div class="spinner"></div><span>集計中...</span></div>';
+
+  const params = {
+    period,
+    baseScenario: typeof baseScenario === 'function' ? baseScenario() : baseScenario,
+    compareScenario,
+    priorScenario: '実績',
+    priorPeriod,
+  };
+
+  run(google.script.run, 'getComparisonData', params)
+    .then(data => {
+      if (!data || data.length === 0) {
+        container.innerHTML = '<div class="empty-state">データがありません</div>';
+        return;
+      }
+      renderComparisonTable(container, data, params, config);
+    })
+    .catch(err => showToast('データ取得エラー: ' + err, true));
+}
+
+function renderComparisonTable(container, data, params, config) {
+  // 科目でグルーピング
+  const byAccount = {};
+  data.forEach(r => {
+    if (!byAccount[r.account]) {
+      byAccount[r.account] = {
+        account: r.account,
+        accountType: r.accountType,
+        base: 0, compare: 0, prior: 0,
+        rows: [],
+      };
+    }
+    byAccount[r.account].base += r.base;
+    byAccount[r.account].compare += r.compare;
+    byAccount[r.account].prior += r.prior;
+    byAccount[r.account].rows.push(r);
+  });
+
+  const accounts = Object.values(byAccount);
+
+  let html = `<div class="table-wrap"><table>
+    <thead><tr>
+      <th>科目</th>
+      <th>科目タイプ</th>
+      <th class="num">${config.baseLabel}</th>
+      <th class="num">${config.compareLabel}</th>
+      <th class="num">差異</th>
+      <th class="num">差異率</th>
+      <th class="num">${config.priorLabel}</th>
+      <th class="num">前年差異</th>
+      <th class="num">前年差異率</th>
+    </tr></thead><tbody>`;
+
+  accounts.forEach(a => {
+    const compDiff = a.base - a.compare;
+    const compRate = a.compare !== 0 ? (compDiff) / Math.abs(a.compare) : null;
+    const priorDiff = a.base - a.prior;
+    const priorRate = a.prior !== 0 ? (priorDiff) / Math.abs(a.prior) : null;
+    const isExpanded = state.expandedAccount === a.account;
+    const hasMultipleDepts = a.rows.length > 1;
+
+    html += `<tr class="${hasMultipleDepts ? 'expandable' : ''}" onclick="toggleDrill('${esc(a.account)}', this)">
+      <td>${hasMultipleDepts ? (isExpanded ? '▼ ' : '▶ ') : '　 '}${esc(a.account)}</td>
+      <td class="text-muted text-sm">${esc(a.accountType)}</td>
+      <td class="num">${fmtAmount(a.base)}</td>
+      <td class="num">${fmtAmount(a.compare)}</td>
+      <td class="num">${fmtDiff(compDiff)}</td>
+      <td class="num">${fmtRate(compRate)}</td>
+      <td class="num">${fmtAmount(a.prior)}</td>
+      <td class="num">${fmtDiff(priorDiff)}</td>
+      <td class="num">${fmtRate(priorRate)}</td>
+    </tr>`;
+
+    // ドリルスルー行
+    if (isExpanded && hasMultipleDepts) {
+      a.rows.forEach(r => {
+        html += `<tr class="drill-row">
+          <td>${esc(r.dept)}</td>
+          <td></td>
+          <td class="num">${fmtAmount(r.base)}</td>
+          <td class="num">${fmtAmount(r.compare)}</td>
+          <td class="num">${fmtDiff(r.compareDiff)}</td>
+          <td class="num">${fmtRate(r.compareDiffRate)}</td>
+          <td class="num">${fmtAmount(r.prior)}</td>
+          <td class="num">${fmtDiff(r.priorDiff)}</td>
+          <td class="num">${fmtRate(r.priorDiffRate)}</td>
+        </tr>`;
+      });
+    }
+  });
+
+  html += '</tbody></table></div>';
+  container.innerHTML = html;
+}
+
+function toggleDrill(account, trEl) {
+  state.expandedAccount = state.expandedAccount === account ? null : account;
+  // 現在のページを再レンダリング
+  if (state.currentPage === 'monthly') {
+    loadComparison('monthly', { baseLabel:'実績', compareLabel:'見込', priorLabel:'前年実績', getBaseScenario: () => '実績' });
+  } else if (state.currentPage === 'forecast') {
+    loadComparison('forecast', { baseLabel:'当月見込', compareLabel:'前月見込', priorLabel:'前年実績', getBaseScenario: () => document.getElementById('comp-base-scenario')?.value || state.selectedForecastScenario, showBaseSelector: true });
+  }
+}
+
+// ========================================================
+// ④ Comment Management
+// ========================================================
+function renderComments() {
+  const content = document.getElementById('content');
+  content.innerHTML = `
+    <div class="control-bar">
+      <div class="control-group">
+        <span class="control-label">対象月度</span>
+        ${periodSelect('cmt-period', state.selectedPeriod)}
+      </div>
+      <button class="btn btn-primary" onclick="loadComments()">表示</button>
+    </div>
+    <div id="cmt-grid"></div>`;
+  loadComments();
+}
+
+function loadComments() {
+  const period = document.getElementById('cmt-period').value;
+  state.selectedPeriod = period;
+
+  const container = document.getElementById('cmt-grid');
+  container.innerHTML = '<div class="loading-overlay"><div class="spinner"></div><span>読み込み中...</span></div>';
+
+  run(google.script.run, 'getComments', period)
+    .then(comments => {
+      if (!comments || comments.length === 0) {
+        container.innerHTML = '<div class="empty-state">部署マスタが未登録です</div>';
+        return;
+      }
+
+      const canEdit = state.user.role === '管理者' || state.user.role === '事業部';
+      const canConfirm = state.user.role === '管理者';
+
+      container.innerHTML = '<div class="comment-grid">' + comments.map(c => {
+        const isMyDept = state.user.role === '管理者' || state.user.dept === c.dept;
+        const editable = canEdit && isMyDept && c.status !== '確認済';
+        const statusBadgeClass = c.status === '確認済' ? 'badge-status-confirmed'
+          : c.status === '入力済' ? 'badge-status-entered'
+          : 'badge-status-empty';
+
+        return `<div class="comment-card" id="cmt-card-${esc(c.dept)}">
+          <div class="comment-card-header">
+            <span class="comment-card-dept">${esc(c.dept)}</span>
+            <span class="badge ${statusBadgeClass}">${esc(c.status)}</span>
+          </div>
+          <div class="comment-card-body">
+            <textarea id="cmt-text-${esc(c.dept)}" ${editable ? '' : 'disabled'}
+              placeholder="${editable ? 'コメントを入力...' : ''}">${esc(c.body)}</textarea>
+            ${c.updatedBy ? `<div class="comment-meta">最終更新: ${esc(c.updatedBy)} / ${esc(c.updatedAt)}</div>` : ''}
+          </div>
+          <div class="comment-actions">
+            ${canConfirm && c.status === '入力済'
+              ? `<button class="btn btn-outline btn-sm" onclick="confirmCmt('${esc(period)}','${esc(c.dept)}')">確認済にする</button>`
+              : ''}
+            ${editable
+              ? `<button class="btn btn-primary btn-sm" onclick="saveCmt('${esc(period)}','${esc(c.dept)}')">保存</button>`
+              : ''}
+          </div>
+        </div>`;
+      }).join('') + '</div>';
+    })
+    .catch(err => showToast('コメント取得エラー: ' + err, true));
+}
+
+function saveCmt(period, dept) {
+  const body = document.getElementById('cmt-text-' + dept).value;
+  run(google.script.run, 'saveComment', period, dept, body)
+    .then(res => {
+      showToast(res.message);
+      loadComments();
+    })
+    .catch(err => showToast('保存エラー: ' + err, true));
+}
+
+function confirmCmt(period, dept) {
+  run(google.script.run, 'confirmComment', period, dept)
+    .then(() => {
+      showToast('確認済にしました');
+      loadComments();
+    })
+    .catch(err => showToast('エラー: ' + err, true));
+}
+
+// ========================================================
+// ⑤ Data Management (Admin)
+// ========================================================
+function renderAdmin() {
+  if (state.user.role !== '管理者') {
+    document.getElementById('content').innerHTML = '<div class="empty-state">管理者のみアクセスできます</div>';
+    return;
+  }
+
+  const content = document.getElementById('content');
+  content.innerHTML = `
+    <div class="card mb-4">
+      <div class="card-header"><span class="card-title">データアップロード</span></div>
+      <div class="card-body">
+        <div class="upload-zone" id="upload-zone"
+          onclick="document.getElementById('file-input').click()"
+          ondragover="event.preventDefault(); this.classList.add('dragover')"
+          ondragleave="this.classList.remove('dragover')"
+          ondrop="handleDrop(event)">
+          <svg width="36" height="36" viewBox="0 0 24 24" fill="none" stroke="#94a3b8" stroke-width="1.5" style="margin:0 auto"><path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg>
+          <div class="upload-zone-label">ログラスからダウンロードしたファイル（xlsx / csv）をドロップ、またはクリックして選択</div>
+          <input type="file" id="file-input" accept=".csv,.xlsx,.xls" class="hidden" onchange="handleFileSelect(event)" />
+        </div>
+        <div id="upload-preview" class="mt-4"></div>
+      </div>
+    </div>
+    <div class="card">
+      <div class="card-header"><span class="card-title">アップロード履歴</span></div>
+      <div class="card-body" id="upload-history">
+        <div class="loading-overlay"><div class="spinner"></div><span>読み込み中...</span></div>
+      </div>
+    </div>`;
+
+  loadUploadHistory();
+}
+
+let pendingCSV = null;
+let pendingFileName = '';
+
+function handleDrop(event) {
+  event.preventDefault();
+  event.currentTarget.classList.remove('dragover');
+  const file = event.dataTransfer.files[0];
+  if (file) processFile(file);
+}
+
+function handleFileSelect(event) {
+  const file = event.target.files[0];
+  if (file) processFile(file);
+}
+
+function processFile(file) {
+  pendingFileName = file.name;
+  const isExcel = /\.xlsx?$/i.test(file.name);
+
+  const reader = new FileReader();
+  reader.onload = (e) => {
+    if (isExcel) {
+      // xlsx → SheetJS でパースして CSV テキストに変換
+      const data = new Uint8Array(e.target.result);
+      const workbook = XLSX.read(data, { type: 'array' });
+      const firstSheet = workbook.Sheets[workbook.SheetNames[0]];
+      pendingCSV = XLSX.utils.sheet_to_csv(firstSheet);
+    } else {
+      // csv はそのまま
+      pendingCSV = e.target.result;
+    }
+
+    document.getElementById('upload-preview').innerHTML =
+      '<div class="loading-overlay"><div class="spinner"></div><span>プレビュー生成中...</span></div>';
+    run(google.script.run, 'previewUpload', pendingCSV)
+      .then(renderPreview)
+      .catch(err => {
+        document.getElementById('upload-preview').innerHTML = '';
+        showToast('プレビューエラー: ' + err, true);
+      });
+  };
+
+  if (isExcel) {
+    reader.readAsArrayBuffer(file);
+  } else {
+    reader.readAsText(file, 'UTF-8');
+  }
+}
+
+function renderPreview(preview) {
+  const container = document.getElementById('upload-preview');
+  let html = `
+    <div class="card">
+      <div class="card-body">
+        <div class="flex items-center justify-between mb-4">
+          <div>
+            <span style="font-weight:600">${esc(pendingFileName)}</span>
+            <span class="text-muted text-sm" style="margin-left:12px">${preview.rowCount.toLocaleString()}行</span>
+          </div>
+        </div>
+        <div style="margin-bottom:12px">
+          <span class="text-sm text-muted">シナリオ: </span>
+          <span class="text-sm">${preview.scenarios.map(s => esc(s)).join(', ')}</span>
+        </div>
+        <div style="margin-bottom:12px">
+          <span class="text-sm text-muted">年月度: </span>
+          <span class="text-sm">${preview.periods.join(', ')}</span>
+        </div>
+        <div style="margin-bottom:16px">
+          <span class="text-sm text-muted">部署: </span>
+          <span class="text-sm">${preview.depts.map(d => esc(d)).join(', ')}</span>
+        </div>
+        <details>
+          <summary class="text-sm text-muted" style="cursor:pointer;margin-bottom:8px">先頭20行プレビュー</summary>
+          <div class="table-wrap" style="max-height:300px;overflow:auto">
+            <table>
+              <thead><tr>${preview.headers.map(h => '<th>' + esc(h) + '</th>').join('')}</tr></thead>
+              <tbody>${preview.preview.map(row =>
+                '<tr>' + row.map(cell => '<td>' + esc(String(cell)) + '</td>').join('') + '</tr>'
+              ).join('')}</tbody>
+            </table>
+          </div>
+        </details>
+        <div style="margin-top:16px;display:flex;gap:8px;justify-content:flex-end">
+          <button class="btn btn-outline" onclick="cancelUpload()">キャンセル</button>
+          <button class="btn btn-primary" id="btn-commit" onclick="commitUploadAction()">確定して取り込む</button>
+        </div>
+      </div>
+    </div>`;
+  container.innerHTML = html;
+}
+
+function cancelUpload() {
+  pendingCSV = null;
+  pendingFileName = '';
+  document.getElementById('upload-preview').innerHTML = '';
+  document.getElementById('file-input').value = '';
+}
+
+function commitUploadAction() {
+  const btn = document.getElementById('btn-commit');
+  btn.disabled = true;
+  btn.textContent = '取り込み中...';
+
+  run(google.script.run, 'commitUpload', pendingCSV, pendingFileName)
+    .then(result => {
+      showToast(`取り込み完了: ${result.imported}行追加 / ${result.deleted}行洗い替え`);
+      pendingCSV = null;
+      pendingFileName = '';
+      document.getElementById('upload-preview').innerHTML = '';
+      document.getElementById('file-input').value = '';
+      loadUploadHistory();
+      // シナリオ・期間の選択肢を更新
+      return Promise.all([
+        run(google.script.run, 'getPeriods'),
+        run(google.script.run, 'getScenarios'),
+      ]);
+    })
+    .then(([periods, scenarios]) => {
+      state.periods = periods;
+      state.scenarios = scenarios;
+    })
+    .catch(err => {
+      showToast('取り込みエラー: ' + err, true);
+      const btn2 = document.getElementById('btn-commit');
+      if (btn2) { btn2.disabled = false; btn2.textContent = '確定して取り込む'; }
+    });
+}
+
+function loadUploadHistory() {
+  const container = document.getElementById('upload-history');
+  run(google.script.run, 'getUploadHistory')
+    .then(history => {
+      if (!history || history.length === 0) {
+        container.innerHTML = '<div class="text-muted text-sm">まだアップロード履歴がありません</div>';
+        return;
+      }
+      container.innerHTML = `<div class="table-wrap"><table>
+        <thead><tr>
+          <th>ファイル名</th><th>シナリオ</th><th>年月度</th><th>行数</th><th>取込日時</th><th>取込者</th>
+        </tr></thead>
+        <tbody>${history.map(h => `<tr>
+          <td>${esc(h.fileName)}</td>
+          <td class="text-sm">${esc(h.scenarios)}</td>
+          <td class="text-sm">${esc(h.periods)}</td>
+          <td class="num">${h.rowCount}</td>
+          <td class="text-sm">${esc(h.importedAt)}</td>
+          <td class="text-sm">${esc(h.importedBy)}</td>
+        </tr>`).join('')}</tbody></table></div>`;
+    })
+    .catch(err => {
+      container.innerHTML = '<div class="text-muted text-sm">履歴の取得に失敗しました</div>';
+    });
+}
+
+// ========================================================
+// Shared UI Helpers
+// ========================================================
+function periodSelect(id, selected) {
+  return `<select id="${id}">
+    ${state.periods.map(p => `<option value="${p}" ${p === selected ? 'selected' : ''}>${p}</option>`).join('')}
+  </select>`;
+}
+
+function scenarioSelect(id, selected) {
+  return `<select id="${id}">
+    ${state.scenarios.map(s => `<option value="${esc(s)}" ${s === selected ? 'selected' : ''}>${esc(s)}</option>`).join('')}
+  </select>`;
+}
+
+// ========================================================
+// Formatting
+// ========================================================
+function fmtAmount(val) {
+  if (val == null || isNaN(val)) return '-';
+  return Number(val).toLocaleString('ja-JP', { maximumFractionDigits: 0 });
+}
+
+function fmtDiff(val) {
+  if (val == null || isNaN(val)) return '-';
+  const cls = val > 0 ? 'text-positive' : val < 0 ? 'text-negative' : '';
+  const sign = val > 0 ? '+' : '';
+  return `<span class="${cls}">${sign}${Number(val).toLocaleString('ja-JP', { maximumFractionDigits: 0 })}</span>`;
+}
+
+function fmtRate(rate) {
+  if (rate == null || isNaN(rate)) return '-';
+  const pct = (rate * 100).toFixed(1);
+  const cls = rate > 0 ? 'text-positive' : rate < 0 ? 'text-negative' : '';
+  const sign = rate > 0 ? '+' : '';
+  return `<span class="${cls}">${sign}${pct}%</span>`;
+}
+
+function diffBadge(diff, rate) {
+  if (diff == null && rate == null) return '<span class="badge badge-neutral">-</span>';
+  const cls = diff > 0 ? 'badge-positive' : diff < 0 ? 'badge-negative' : 'badge-neutral';
+  const sign = diff > 0 ? '+' : '';
+  const rateStr = rate != null ? ` (${sign}${(rate * 100).toFixed(1)}%)` : '';
+  return `<span class="badge ${cls}">${sign}${fmtAmount(diff)}${rateStr}</span>`;
+}
+
+function shiftYear(period, delta) {
+  const [y, m] = period.split('-').map(Number);
+  return `${y + delta}-${String(m).padStart(2, '0')}`;
+}
+
+function esc(str) {
+  if (str == null) return '';
+  const d = document.createElement('div');
+  d.textContent = String(str);
+  return d.innerHTML;
+}
+
+// ========================================================
+// Modal
+// ========================================================
+function openModal(title, bodyHtml, footerHtml) {
+  document.getElementById('modal-title').textContent = title;
+  document.getElementById('modal-body').innerHTML = bodyHtml;
+  document.getElementById('modal-footer').innerHTML = footerHtml || '';
+  document.getElementById('modal-overlay').classList.add('open');
+}
+
+function closeModal(event) {
+  if (event && event.target !== document.getElementById('modal-overlay')) return;
+  document.getElementById('modal-overlay').classList.remove('open');
+}
+
+// ========================================================
+// Toast
+// ========================================================
+function showToast(message, isError) {
+  const container = document.getElementById('toast-container');
+  const toast = document.createElement('div');
+  toast.className = 'toast' + (isError ? ' toast-error' : '');
+  toast.textContent = message;
+  container.appendChild(toast);
+  setTimeout(() => { toast.remove(); }, 4000);
+}
+</script>
+
+</body>
+</html>
