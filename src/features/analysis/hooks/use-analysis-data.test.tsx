@@ -26,7 +26,7 @@ describe("useAnalysisData", () => {
 
   it("falls back to fixture data when GAS is unavailable", async () => {
     const { useAnalysisData } = await import("./use-analysis-data")
-    const { result } = renderHook(() => useAnalysisData())
+    const { result } = renderHook(() => useAnalysisData("2026-02"))
 
     await waitFor(() => {
       expect(result.current.isLoading).toBe(false)
@@ -101,7 +101,7 @@ describe("useAnalysisData", () => {
     ])
 
     const { useAnalysisData } = await import("./use-analysis-data")
-    const { result } = renderHook(() => useAnalysisData())
+    const { result } = renderHook(() => useAnalysisData("2026-02"))
 
     await waitFor(() => {
       expect(result.current.isLoading).toBe(false)

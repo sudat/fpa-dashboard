@@ -5,7 +5,7 @@ import { generateComparisonData, type ComparisonSet, normalizeRawRows } from "@/
 import { applyBucketFilter } from "@/features/analysis/lib/bucket-filter"
 import { resolveComparisonData } from "@/features/analysis/lib/comparison-resolver"
 import { applyMasterMapping } from "@/lib/domain/master-schema"
-import type { ScenarioFamily, UploadMetadata } from "@/lib/domain/upload-contract"
+import type { ABCResolution, ScenarioFamily, UploadMetadata } from "@/lib/domain/upload-contract"
 import { loglassSmallRawFixture } from "@/lib/fixtures/loglass-small"
 import { gasClient, isGasAvailable, type AnalysisData } from "@/lib/gas/gas-client"
 import { deriveMetricTypeFromScenario } from "@/lib/loglass/schema"
@@ -43,8 +43,6 @@ const ACCOUNT_AGGREGATE_MAP: Record<string, string> = {
   地代家賃: "販管費",
   販管費: "販管費",
 }
-
-export const ANALYSIS_TARGET_MONTH = "2026-02"
 
 type AggregateBucket = {
   baseRow: LoglessRawRow
@@ -128,6 +126,7 @@ function buildAnalysisData(
   rawRows: LoglessRawRow[],
   targetMonth: string,
   uploadHistory?: UploadMetadata[],
+  abcOverride?: ABCResolution,
 ): Pick<UseAnalysisDataResult, "normalizedData" | "comparisonData"> {
   const normalizedData = aggregateByDepartment(normalizeRawRows(rawRows))
 
@@ -135,7 +134,7 @@ function buildAnalysisData(
     normalizedData,
     comparisonData:
       uploadHistory && uploadHistory.length > 0
-        ? resolveComparisonData(normalizedData, targetMonth, uploadHistory)
+        ? resolveComparisonData(normalizedData, targetMonth, uploadHistory, abcOverride)
         : generateComparisonData(normalizedData, targetMonth),
   }
 }
@@ -216,7 +215,7 @@ async function loadPersistedAnalysisSource(targetMonth: string): Promise<{
   return { rawRows, uploadHistory }
 }
 
-export function useAnalysisData(targetMonth = ANALYSIS_TARGET_MONTH): UseAnalysisDataResult {
+export function useAnalysisData(targetMonth: string, abcOverride?: ABCResolution): UseAnalysisDataResult {
   const [state, setState] = useState<UseAnalysisDataResult>({
     normalizedData: [],
     comparisonData: [],
@@ -238,7 +237,7 @@ export function useAnalysisData(targetMonth = ANALYSIS_TARGET_MONTH): UseAnalysi
         }
 
         setState({
-          ...buildAnalysisData(source.rawRows, targetMonth, source.uploadHistory),
+          ...buildAnalysisData(source.rawRows, targetMonth, source.uploadHistory, abcOverride),
           isLoading: false,
           error: null,
         })
@@ -261,7 +260,7 @@ export function useAnalysisData(targetMonth = ANALYSIS_TARGET_MONTH): UseAnalysi
     return () => {
       cancelled = true
     }
-  }, [targetMonth])
+  }, [targetMonth, abcOverride])
 
   return state
 }

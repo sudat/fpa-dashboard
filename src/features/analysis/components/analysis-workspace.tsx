@@ -30,6 +30,7 @@ export interface AnalysisWorkspaceProps {
   actions: AnalysisActions
   comparisonData: ComparisonSet[]
   normalizedRows: LoglassNormalizedRow[]
+  targetMonth: string
   loading?: boolean
   className?: string
 }
@@ -98,6 +99,7 @@ export function AnalysisWorkspace({
   actions,
   comparisonData,
   normalizedRows,
+  targetMonth,
   loading,
   className,
 }: AnalysisWorkspaceProps) {
@@ -169,7 +171,7 @@ export function AnalysisWorkspace({
       return null
     }
 
-    return selectTrendSeries(normalizedRows, selectedAccountCode, departmentCode, periodType, "2026-02")
+    return selectTrendSeries(normalizedRows, selectedAccountCode, departmentCode, periodType, targetMonth)
   }, [departmentCode, normalizedRows, periodType, selectedAccountCode])
 
   const differenceData = useMemo(

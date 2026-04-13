@@ -105,6 +105,7 @@ function renderWorkspace(overrides: Partial<AnalysisState> = {}) {
       actions={createActions()}
       comparisonData={comparisonData}
       normalizedRows={normalizedRows}
+      targetMonth="2026-02"
     />,
   )
 }
@@ -118,6 +119,7 @@ function AnalysisWorkspaceHarness() {
       actions={actions}
       comparisonData={comparisonData}
       normalizedRows={normalizedRows}
+      targetMonth="2026-02"
     />
   )
 }
