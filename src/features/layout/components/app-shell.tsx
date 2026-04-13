@@ -3,7 +3,6 @@ import { AnalysisPage } from "@/features/analysis/pages/analysis-page"
 import { Sidebar, type NavItem } from "./sidebar"
 import { AnalysisHeader } from "./analysis-header"
 import { useAnalysisState } from "@/features/analysis/state/use-analysis-state"
-import { CommentPaneShell } from "@/features/comments/components/comment-pane-shell"
 import { AdminPage } from "@/features/admin/components/admin-page"
 
 export function AppShell() {
@@ -38,8 +37,6 @@ export function AppShell() {
             </div>
           )}
         </div>
-
-        <CommentPaneShell className="hidden lg:flex" />
       </main>
     </div>
   )

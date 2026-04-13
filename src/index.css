@@ -159,9 +159,6 @@
   --sidebar-width: 220px;
   --sidebar-collapsed-width: 48px;
 
-  /* ---- Comment panel ---- */
-  --comment-panel-width: 340px;
-
   /* ---- Chart colors (financial palette) ---- */
   --chart-positive: oklch(0.527 0.150 160);
   --chart-negative: oklch(0.577 0.200 25);

@@ -1,6 +1,5 @@
 export const SIDEBAR_WIDTH = 220;
 export const SIDEBAR_COLLAPSED_WIDTH = 48;
-export const COMMENT_PANEL_WIDTH = 340;
 
 export const TYPOGRAPHY = {
   pageTitle: "text-xl font-semibold tracking-tight",
@@ -37,6 +36,5 @@ export const CHART_COLORS = {
 export const LAYOUT = {
   sidebarWidth: `${SIDEBAR_WIDTH}px`,
   sidebarCollapsedWidth: `${SIDEBAR_COLLAPSED_WIDTH}px`,
-  commentPanelWidth: `${COMMENT_PANEL_WIDTH}px`,
   mainContentMinWidth: "800px",
 } as const;

@@ -1,74 +1,21 @@
 {
-  "active_plan": "/usr/local/src/dev/wsl/google-apps-script/fpa-dashboard/.sisyphus/plans/loglass-schema-fix.md",
-  "started_at": "2026-04-13T03:07:46.754Z",
+  "active_plan": "/usr/local/src/dev/wsl/google-apps-script/fpa-dashboard/.sisyphus/plans/remove-comment-ui.md",
+  "started_at": "2026-04-13T04:50:53.636Z",
   "session_ids": [
-    "ses_27df1de0cffe8lLcoa76HHZeWo",
-    "ses_27b2cd768ffecdq5BFxHwv73Iu",
-    "ses_27b219e6dffefkngrRyooo5s3J",
-    "ses_27b1a6b01ffe2J5tRz3ZO6V5JZ",
-    "ses_27b1a6e21ffe4qIpVDZRfO3j42",
-    "ses_27b15dee6ffePTISK40i3ysZBn",
-    "ses_27b0ff091ffePQhddHLmTi1AaC",
-    "ses_27af32e6dffeH5jeoE5kiZ9UEa",
-    "ses_27af332e4ffeJO8vvvFsBZfvEl",
-    "ses_27af32a34ffelaCjBFvBVE4e1e",
-    "ses_27aeae045ffetr5BiwtVIKZyBJ"
+    "ses_27ae26f05ffeS9e6wQClVzoPTC",
+    "ses_27ad0efa3ffeC8BzWsZJdTcutf"
   ],
-  "plan_name": "loglass-schema-fix",
+  "plan_name": "remove-comment-ui",
   "agent": "atlas",
   "task_sessions": {
     "todo:1": {
       "task_key": "todo:1",
       "task_label": "1",
-      "task_title": "Redefine loglessRawRowSchema to 10 real xlsx columns + schema tests",
-      "session_id": "ses_27b2cd768ffecdq5BFxHwv73Iu",
+      "task_title": "コメント機能プレースホルダーUIの完全削除",
+      "session_id": "ses_27ad0efa3ffeC8BzWsZJdTcutf",
       "agent": "Sisyphus-Junior",
-      "category": "deep",
-      "updated_at": "2026-04-13T03:16:02.505Z"
-    },
-    "todo:2": {
-      "task_key": "todo:2",
-      "task_label": "2",
-      "task_title": "Create 10-col fixture factory (createLoglessRawRow)",
-      "session_id": "ses_27b219e6dffefkngrRyooo5s3J",
-      "agent": "Sisyphus-Junior",
-      "category": "deep",
-      "updated_at": "2026-04-13T03:27:50.132Z"
-    },
-    "todo:4": {
-      "task_key": "todo:4",
-      "task_label": "4",
-      "task_title": "Update normalizeRawRows() for 10-col input + derive fields",
-      "session_id": "ses_27b1a6e21ffe4qIpVDZRfO3j42",
-      "agent": "Sisyphus-Junior",
-      "category": "deep",
-      "updated_at": "2026-04-13T03:34:19.123Z"
-    },
-    "todo:6": {
-      "task_key": "todo:6",
-      "task_label": "6",
-      "task_title": "Restructure buildAggregateRawRows() without 集計科目名",
-      "session_id": "ses_27b15dee6ffePTISK40i3ysZBn",
-      "agent": "Sisyphus-Junior",
-      "category": "deep",
-      "updated_at": "2026-04-13T03:40:42.933Z"
-    },
-    "todo:8": {
-      "task_key": "todo:8",
-      "task_label": "8",
-      "task_title": "Fix all test fixtures and test files",
-      "session_id": "ses_27b0ff091ffePQhddHLmTi1AaC",
-      "agent": "Sisyphus-Junior",
-      "category": "unspecified-high",
-      "updated_at": "2026-04-13T04:09:28.231Z"
-    },
-    "final-wave:f1": {
-      "task_key": "final-wave:f1",
-      "task_label": "F1",
-      "task_title": "**Schema Compliance Audit** — `oracle`",
-      "session_id": "ses_27af32e6dffeH5jeoE5kiZ9UEa",
-      "agent": "oracle",
-      "updated_at": "2026-04-13T04:20:22.973Z"
+      "category": "quick",
+      "updated_at": "2026-04-13T04:55:13.885Z"
     }
   }
 }

@@ -230,7 +230,6 @@ export function VisualPreview() {
           <h2 className={TYPOGRAPHY.sectionHeader}>レイアウト定数 (Layout Constants)</h2>
           <div className={TYPOGRAPHY.body + " space-y-1 text-muted-foreground"}>
             <p>Sidebar: 220px (expanded) / 48px (collapsed)</p>
-            <p>Comment Panel: 340px</p>
             <p>Viewport target: 1440px+ (desktop-first)</p>
           </div>
         </section>
