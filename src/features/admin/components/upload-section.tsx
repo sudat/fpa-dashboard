@@ -8,6 +8,7 @@ import {
 import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
 import { TYPOGRAPHY, SPACING } from "@/lib/ui/theme"
+import { cn } from "@/lib/utils"
 import { useUploadFlow } from "../hooks/use-upload-flow"
 import { ScenarioInputForm } from "./scenario-input-form"
 import { UploadPreview } from "./upload-preview"
@@ -19,7 +20,6 @@ export function UploadSection() {
   const {
     state,
     selectFile,
-    setScenarioInput,
     preview,
     commit,
     reset,
@@ -98,29 +98,34 @@ export function UploadSection() {
                 onDrop={handleDrop}
                 onDragOver={handleDragOver}
                 onDragLeave={handleDragLeave}
-                className={`flex flex-col items-center justify-center rounded-none border-2 border-dashed px-6 py-10 transition-colors ${
+                className={cn(
+                  "flex flex-col items-center justify-center rounded-md border-2 border-dashed px-6 py-10 transition-colors",
                   isDragOver
                     ? "border-primary bg-primary/5"
                     : state.file
-                      ? "border-green-500 bg-green-50/50 dark:bg-green-950/20"
-                      : "border-muted-foreground/30 hover:border-muted-foreground/50"
-                }`}
+                      ? "border-[color:var(--positive)] bg-positive-muted"
+                      : "border-muted-foreground/30 hover:border-muted-foreground/50",
+                )}
               >
                 {state.file ? (
                   <div className="flex items-center gap-3">
-                    <Badge variant="outline" className="rounded-none bg-green-100 text-green-800 dark:bg-green-900/30 dark:text-green-400">
+                    <Badge
+                      variant="outline"
+                      className="border-[color:var(--positive)] bg-positive-muted text-positive"
+                    >
                       選択済み
                     </Badge>
                     <span className={TYPOGRAPHY.body}>{state.file.name}</span>
                     <span className={TYPOGRAPHY.small}>
                       ({(state.file.size / 1024).toFixed(1)} KB)
                     </span>
-                    <button
+                    <Button
+                      variant="ghost"
+                      size="xs"
                       onClick={reset}
-                      className="rounded-none px-2 py-0.5 text-xs text-muted-foreground hover:text-foreground hover:bg-muted"
                     >
                       変更
-                    </button>
+                    </Button>
                   </div>
                 ) : (
                   <>
@@ -146,10 +151,9 @@ export function UploadSection() {
               </div>
 
               <ScenarioInputForm
-                value={state.scenarioInput ?? {}}
+                detectedScenarios={state.detectedScenarios}
                 generatedLabel={state.generatedLabel}
-                onChange={setScenarioInput}
-                disabled={isUploading || isPreviewing}
+                isLoading={isPreviewing}
               />
 
               {state.preview && (
@@ -164,8 +168,8 @@ export function UploadSection() {
               )}
 
               {state.errorMessage && state.phase === "error" && (
-                <div className="rounded-none border border-red-300 bg-red-50 px-3 py-2 dark:bg-red-950/30">
-                  <p className="text-red-600 text-sm">{state.errorMessage}</p>
+                <div className="rounded-md border border-[color:var(--negative)] bg-negative-muted px-3 py-2">
+                  <p className="text-negative text-sm">{state.errorMessage}</p>
                 </div>
               )}
 

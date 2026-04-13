@@ -1,5 +1,5 @@
 import { useState, useCallback, useRef } from "react"
-import type { ScenarioInput, ReplacementWarning, UploadMetadata } from "@/lib/domain/upload-contract"
+import type { ScenarioKind, ScenarioInput, ReplacementWarning, UploadMetadata } from "@/lib/domain/upload-contract"
 import { scenarioInputSchema } from "@/lib/domain/upload-contract"
 import { gasClient, isGasAvailable, type UploadPreview } from "@/lib/gas/gas-client"
 import { generateScenarioLabel } from "@/lib/domain/scenario-label"
@@ -13,6 +13,13 @@ export type UploadPhase =
   | "success"
   | "error"
 
+export interface DetectedScenario {
+  kind: ScenarioKind
+  targetMonth: string
+  monthCount: number
+  rowCount: number
+}
+
 export interface UploadState {
   phase: UploadPhase
   file: File | null
@@ -20,6 +27,7 @@ export interface UploadState {
   scenarioInput: ScenarioInput | null
   generatedLabel: string | null
   preview: UploadPreview["preview"] | null
+  detectedScenarios: DetectedScenario[] | null
   replacementWarning: ReplacementWarning | null
   result: UploadMetadata | null
   errorMessage: string | null
@@ -32,12 +40,13 @@ const INITIAL_STATE: UploadState = {
   scenarioInput: null,
   generatedLabel: null,
   preview: null,
+  detectedScenarios: null,
   replacementWarning: null,
   result: null,
   errorMessage: null,
 }
 
-function mockPreviewUpload(_base64: string, _input: ScenarioInput): UploadPreview {
+function mockPreviewUpload(_base64: string, _input: ScenarioInput): UploadPreview & { detectedScenarios?: DetectedScenario[] } {
   return {
     preview: {
       rawRowCount: 42,
@@ -45,6 +54,9 @@ function mockPreviewUpload(_base64: string, _input: ScenarioInput): UploadPrevie
       accounts: ["売上高", "売上原価", "販管費"],
     },
     replacementWarning: null,
+    detectedScenarios: [
+      { kind: "actual", targetMonth: "2026-01", monthCount: 12, rowCount: 42 },
+    ],
   }
 }
 
@@ -78,12 +90,48 @@ function fileToBase64(file: File): Promise<string> {
   })
 }
 
+function buildDefaultScenarioInput(): ScenarioInput {
+  const now = new Date()
+  const targetMonth = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, "0")}`
+  return scenarioInputSchema.parse({ kind: "actual" as ScenarioKind, targetMonth })
+}
+
+function extractDetectedScenarios(result: unknown): DetectedScenario[] | null {
+  const obj = result as Record<string, unknown>
+  if (Array.isArray(obj?.detectedScenarios)) {
+    return obj.detectedScenarios as DetectedScenario[]
+  }
+  return null
+}
+
+function autoPopulateFromDetected(detected: DetectedScenario[] | null): {
+  scenarioInput: ScenarioInput | null
+  generatedLabel: string | null
+} {
+  if (!detected || detected.length === 0) return { scenarioInput: null, generatedLabel: null }
+  const first = detected[0]
+  try {
+    const scenarioInput = scenarioInputSchema.parse({
+      kind: first.kind,
+      targetMonth: first.targetMonth,
+    })
+    return {
+      scenarioInput,
+      generatedLabel: generateScenarioLabel(scenarioInput),
+    }
+  } catch {
+    return { scenarioInput: null, generatedLabel: null }
+  }
+}
+
 export function useUploadFlow() {
   const [state, setState] = useState<UploadState>(INITIAL_STATE)
   const abortRef = useRef(false)
+  const fileBase64Ref = useRef<string | null>(null)
 
   const reset = useCallback(() => {
     abortRef.current = false
+    fileBase64Ref.current = null
     setState(INITIAL_STATE)
   }, [])
 
@@ -94,12 +142,46 @@ export function useUploadFlow() {
     }
     try {
       const base64 = await fileToBase64(file)
+      fileBase64Ref.current = base64
+
       setState({
         ...INITIAL_STATE,
-        phase: "file_selected",
+        phase: "previewing",
         file,
         fileBase64: base64,
       })
+
+      abortRef.current = false
+
+      try {
+        const defaultInput = buildDefaultScenarioInput()
+        const useMock = !isGasAvailable()
+        const result = useMock
+          ? mockPreviewUpload(base64, defaultInput)
+          : await gasClient.previewUpload(base64, defaultInput)
+
+        if (abortRef.current) return
+
+        const detected = extractDetectedScenarios(result)
+        const { scenarioInput, generatedLabel } = autoPopulateFromDetected(detected)
+
+        setState((prev) => ({
+          ...prev,
+          preview: result.preview,
+          replacementWarning: result.replacementWarning,
+          detectedScenarios: detected,
+          scenarioInput: scenarioInput ?? prev.scenarioInput,
+          generatedLabel: generatedLabel ?? prev.generatedLabel,
+          phase: result.replacementWarning ? "warning_shown" : "file_selected",
+        }))
+      } catch (e) {
+        if (abortRef.current) return
+        setState((prev) => ({
+          ...prev,
+          phase: "file_selected",
+          errorMessage: e instanceof Error ? e.message : "プレビュー取得エラー",
+        }))
+      }
     } catch (e) {
       setState((prev) => ({
         ...prev,
@@ -123,24 +205,28 @@ export function useUploadFlow() {
   }, [])
 
   const preview = useCallback(async () => {
-    const { fileBase64, scenarioInput } = state
-    if (!fileBase64 || !scenarioInput) return
+    const fileBase64 = fileBase64Ref.current
+    if (!fileBase64) return
 
     abortRef.current = false
     setState((prev) => ({ ...prev, phase: "previewing", preview: null, replacementWarning: null }))
 
     try {
+      const defaultInput = buildDefaultScenarioInput()
       const useMock = !isGasAvailable()
       const result = useMock
-        ? mockPreviewUpload(fileBase64, scenarioInput)
-        : await gasClient.previewUpload(fileBase64, scenarioInput)
+        ? mockPreviewUpload(fileBase64, defaultInput)
+        : await gasClient.previewUpload(fileBase64, defaultInput)
 
       if (abortRef.current) return
+
+      const detected = extractDetectedScenarios(result)
 
       setState((prev) => ({
         ...prev,
         preview: result.preview,
         replacementWarning: result.replacementWarning,
+        detectedScenarios: detected,
         phase: result.replacementWarning ? "warning_shown" : "file_selected",
       }))
     } catch (e) {
@@ -151,10 +237,11 @@ export function useUploadFlow() {
         errorMessage: e instanceof Error ? e.message : "プレビュー取得エラー",
       }))
     }
-  }, [state])
+  }, [])
 
   const commit = useCallback(async () => {
-    const { fileBase64, scenarioInput, replacementWarning } = state
+    const fileBase64 = fileBase64Ref.current
+    const { scenarioInput, replacementWarning } = state
     if (!fileBase64 || !scenarioInput) return
 
     abortRef.current = false
