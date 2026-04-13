@@ -8,8 +8,6 @@ import {
   uploadMetadataSchema,
   scenarioInputSchema,
 } from "@/lib/domain/upload-contract";
-import type { LoglessRawRow } from "@/lib/loglass/types";
-import { loglassRawRowArraySchema } from "@/lib/loglass/schema";
 import type {
   AccountMasterEntry,
   DepartmentMasterEntry,
@@ -48,6 +46,7 @@ const currentUserSchema = z.object({
   email: z.string().min(1),
   name: z.string().min(1),
 });
+const workbookBase64Schema = z.string().trim().min(1);
 const uploadFileNameSchema = z.string().trim().min(1);
 
 const importDataRowSchema = z.object({
@@ -79,7 +78,7 @@ declare global {
       script?: {
         run?: GasRunnerWithHandlers & {
           getCurrentUser: GasRunner<() => CurrentUser>;
-          commitUpload: GasRunner<(uploadRows: LoglessRawRow[], originalFileName: string, scenarioInput: ScenarioInput, confirmedReplacement: ReplacementWarning | null) => UploadMetadata>;
+          commitUpload: GasRunner<(workbookBase64: string, originalFileName: string, scenarioInput: ScenarioInput, confirmedReplacement: ReplacementWarning | null) => UploadMetadata>;
           getUploadHistory: GasRunner<() => UploadMetadata[]>;
           getAccountMaster: GasRunner<() => AccountMasterEntry[]>;
           saveAccountMaster: GasRunner<(entries: AccountMasterEntry[]) => void>;
@@ -171,15 +170,15 @@ export const gasClient = {
   },
 
   commitUpload(
-    uploadRows: LoglessRawRow[],
+    workbookBase64: string,
     originalFileName: string,
     scenarioInput: ScenarioInput,
     confirmedReplacement: ReplacementWarning | null,
   ): Promise<UploadMetadata> {
-    const validatedRows = loglassRawRowArraySchema.parse(uploadRows);
+    const validatedWorkbookBase64 = workbookBase64Schema.parse(workbookBase64);
     const validatedFileName = uploadFileNameSchema.parse(originalFileName);
     const validated = scenarioInputSchema.parse(scenarioInput);
-    return runGas<UploadMetadata>("commitUpload", validatedRows, validatedFileName, validated, confirmedReplacement).then((r) =>
+    return runGas<UploadMetadata>("commitUpload", validatedWorkbookBase64, validatedFileName, validated, confirmedReplacement).then((r) =>
       uploadMetadataSchema.parse(r),
     );
   },

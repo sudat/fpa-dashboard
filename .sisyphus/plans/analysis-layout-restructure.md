@@ -162,7 +162,7 @@ Parallel Speedup: ~40% faster than sequential
 
 ## TODOs
 
-- [ ] 1. activeSubView state の4値拡張
+- [x] 1. activeSubView state の4値拡張
 
   **What to do**:
   - `src/features/analysis/state/use-analysis-state.ts` の `activeSubView` 型を `"trend" | "table"` から `"pl" | "gmv" | "trend" | "difference"` に変更
@@ -237,7 +237,7 @@ Parallel Speedup: ~40% faster than sequential
   - Files: `use-analysis-state.ts, analysis-state.test.ts`
   - Pre-commit: `bunx vitest run src/features/analysis/state/`
 
-- [ ] 2. selectGmvRatios セレクタ新規追加
+- [x] 2. selectGmvRatios セレクタ新規追加
 
   **What to do**:
   - `src/features/analysis/lib/summary.ts` に `selectGmvRatios` 関数を追加
@@ -334,7 +334,7 @@ Parallel Speedup: ~40% faster than sequential
   - Files: `summary.ts, selectors.ts, new test file`
   - Pre-commit: `bunx vitest run src/features/analysis/lib/`
 
-- [ ] 3. 科目名列の幅修正
+- [x] 3. 科目名列の幅修正
 
   **What to do**:
   - `src/features/analysis/components/detail/aggregate-accordion-table.tsx:115` の科目名ヘッダーの `flex-1 min-w-[120px]` を `w-[200px]` に変更

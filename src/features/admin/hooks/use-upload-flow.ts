@@ -3,8 +3,7 @@ import type { ScenarioKind, ScenarioInput, ReplacementWarning, UploadMetadata } 
 import { computeReplacementIdentity, scenarioInputSchema } from "@/lib/domain/upload-contract"
 import { gasClient, isGasAvailable } from "@/lib/gas/gas-client"
 import { generateScenarioLabel } from "@/lib/domain/scenario-label"
-import { parseUploadWorkbookFromBase64 } from "../lib/detect-client"
-import type { LoglessRawRow } from "@/lib/loglass/types"
+import { detectScenariosFromBase64 } from "../lib/detect-client"
 
 export type UploadPhase =
   | "idle"
@@ -49,8 +48,7 @@ const INITIAL_STATE: UploadState = {
   isReadingFile: false,
 }
 
-function mockCommitUpload(rows: LoglessRawRow[], fileName: string, input: ScenarioInput, confirmedReplacement: ReplacementWarning | null): UploadMetadata {
-  void rows
+function mockCommitUpload(fileName: string, input: ScenarioInput, confirmedReplacement: ReplacementWarning | null): UploadMetadata {
   void confirmedReplacement
   const label = generateScenarioLabel(input)
   return {
@@ -125,12 +123,12 @@ function autoPopulateFromDetected(detected: DetectedScenario[] | null): {
 
 export function useUploadFlow() {
   const [state, setState] = useState<UploadState>(INITIAL_STATE)
-  const uploadRowsRef = useRef<LoglessRawRow[] | null>(null)
+  const workbookBase64Ref = useRef<string | null>(null)
   const operationIdRef = useRef(0)
 
   const reset = useCallback(() => {
     operationIdRef.current += 1
-    uploadRowsRef.current = null
+    workbookBase64Ref.current = null
     setState(INITIAL_STATE)
   }, [])
 
@@ -141,7 +139,7 @@ export function useUploadFlow() {
     }
 
     const operationId = ++operationIdRef.current
-    uploadRowsRef.current = null
+    workbookBase64Ref.current = null
     setState({
       ...INITIAL_STATE,
       file,
@@ -152,12 +150,12 @@ export function useUploadFlow() {
       const base64 = await fileToBase64(file)
       if (operationId !== operationIdRef.current) return
 
-      const { rawRows, detectedScenarios } = parseUploadWorkbookFromBase64(base64)
-      if (rawRows.length === 0) {
+      const detectedScenarios = detectScenariosFromBase64(base64)
+      if (detectedScenarios.length === 0) {
         throw new Error("アップロード対象データが見つかりませんでした")
       }
 
-      uploadRowsRef.current = rawRows
+      workbookBase64Ref.current = base64
 
       const detected = detectedScenarios.length > 0 ? detectedScenarios : null
       const { scenarioInput, generatedLabel } = autoPopulateFromDetected(detected)
@@ -172,6 +170,7 @@ export function useUploadFlow() {
       })
     } catch (e) {
       if (operationId !== operationIdRef.current) return
+      workbookBase64Ref.current = null
 
       setState({
         ...INITIAL_STATE,
@@ -198,9 +197,9 @@ export function useUploadFlow() {
   }, [])
 
   const commit = useCallback(async () => {
-    const uploadRows = uploadRowsRef.current
+    const workbookBase64 = workbookBase64Ref.current
     const { file, scenarioInput, replacementWarning } = state
-    if (!uploadRows || !file || !scenarioInput) return
+    if (!workbookBase64 || !file || !scenarioInput) return
 
     const operationId = ++operationIdRef.current
 
@@ -240,8 +239,8 @@ export function useUploadFlow() {
     try {
       const useMock = !isGasAvailable()
       const result = useMock
-        ? mockCommitUpload(uploadRows, file.name, scenarioInput, replacementWarning)
-        : await gasClient.commitUpload(uploadRows, file.name, scenarioInput, replacementWarning)
+        ? mockCommitUpload(file.name, scenarioInput, replacementWarning)
+        : await gasClient.commitUpload(workbookBase64, file.name, scenarioInput, replacementWarning)
 
       if (operationId !== operationIdRef.current) return
 

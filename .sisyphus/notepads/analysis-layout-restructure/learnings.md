@@ -1,0 +1,2 @@
+- 2026-04-13: `selectSummaryRows` は `applyBucketFilter` 後に `periodType` → `departmentCode` → 対象科目集合で絞り、`map` → major account順 `sort` の流れ。`selectGmvRatios` も同じ流れに合わせると既存セレクタと整合する。
+- 2026-04-13: GMV分母は `comparisonData` 内の GMV系科目（`SaaS GMV`, `広告 GMV`, `EC GMV`, `GMV`）の **B合計** を使う。A/BA/C/BC も同じ Bベース分母で割る前提でテスト化した。

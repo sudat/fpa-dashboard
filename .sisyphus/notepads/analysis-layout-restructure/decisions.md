@@ -1,0 +1,2 @@
+- 2026-04-13: `GmvRatioRow` は `SummaryRow` を壊さず summary.ts に並置し、`selectors.ts` から型と関数を再exportする方針にした。既存UI/他セレクタへの影響を避けるため（KISS, YAGNI）。
+- 2026-04-13: GMV合計が `null` または `0` のときは全比率を `null` 返却に統一した。表示側の `formatGmvRatio` 既存ルールに寄せ、分母不正時の特殊値を持ち込まないため。

@@ -102,20 +102,9 @@ describe("gasClient", () => {
   it("commitUpload resolves with validated UploadMetadata", async () => {
     const { gasClient } = await import("@/lib/gas/gas-client");
 
-    const uploadRows = [{
-      シナリオ: "実績",
-      年月度: "2026-01",
-      科目コード: "A001",
-      外部科目コード: "",
-      科目: "売上高",
-      科目タイプ: "収益",
-      部署コード: "D001",
-      外部部署コード: "",
-      部署: "営業部",
-      金額: 1000,
-    }];
+    const workbookBase64 = "dGVzdA==";
     const scenarioInput = { kind: "actual" as const, targetMonth: "2026-01" };
-    const promise = gasClient.commitUpload(uploadRows, "actual_2026-01.xlsx", scenarioInput, null);
+    const promise = gasClient.commitUpload(workbookBase64, "actual_2026-01.xlsx", scenarioInput, null);
 
     mockSuccessHandlers["commitUpload"]({
       uploadId: "abc-123",
@@ -135,23 +124,12 @@ describe("gasClient", () => {
     expect(result.generatedLabel).toBe("2026/01月実績");
   });
 
-  it("commitUpload validates rows and sends the new GAS contract", async () => {
+  it("commitUpload validates the workbook payload and sends the new GAS contract", async () => {
     const { gasClient } = await import("@/lib/gas/gas-client");
 
-    const uploadRows = [{
-      シナリオ: "実績",
-      年月度: "2026-01",
-      科目コード: "A001",
-      外部科目コード: "",
-      科目: "売上高",
-      科目タイプ: "収益",
-      部署コード: "D001",
-      外部部署コード: "",
-      部署: "営業部",
-      金額: 1000,
-    }];
+    const workbookBase64 = "dGVzdA==";
     const scenarioInput = { kind: "actual" as const, targetMonth: "2026-01" };
-    const promise = gasClient.commitUpload(uploadRows, "actual_2026-01.xlsx", scenarioInput, null);
+    const promise = gasClient.commitUpload(workbookBase64, "actual_2026-01.xlsx", scenarioInput, null);
 
     mockSuccessHandlers["commitUpload"]({
       uploadId: "abc-123",
@@ -168,7 +146,7 @@ describe("gasClient", () => {
 
     await promise;
     expect(mockCalls["commitUpload"]?.[0]).toEqual([
-      uploadRows,
+      workbookBase64,
       "actual_2026-01.xlsx",
       { kind: "actual", targetMonth: "2026-01" },
       null,

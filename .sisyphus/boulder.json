@@ -1,76 +1,23 @@
 {
-  "active_plan": "/usr/local/src/dev/wsl/google-apps-script/fpa-dashboard/.sisyphus/plans/period-scenario-selector.md",
-  "started_at": "2026-04-13T06:05:29.071Z",
+  "active_plan": "/usr/local/src/dev/wsl/google-apps-script/fpa-dashboard/.sisyphus/plans/analysis-layout-restructure.md",
+  "started_at": "2026-04-13T11:22:01.464Z",
   "session_ids": [
-    "ses_27abb141cffeLcgNJqbIHB2JkS",
-    "ses_27a8a70e0ffeg1mVtgL3qC8mPq",
-    "ses_27a8a6edaffeyiL9hNJldNkgOE",
-    "ses_27a8a6f9fffePEG30rWUs2Niyv",
-    "ses_27a4e168dffewlaHbcKWopFk2e",
-    "ses_27a4e1476ffeeak1hxApTHZq4N",
-    "ses_27a1ee03cffegndexd2WkNJsVG",
-    "ses_27a1edf39ffe20q9SjFj2rwwG5",
-    "ses_27a02481affe3pREzfLKp4XRbf",
-    "ses_27a024a05ffeZOB3w0TOX9tHbq",
-    "ses_279e7b941ffeu5KbUbAUnKRKnG",
-    "ses_279e7b4daffeJXhlDF7o10NdoT"
+    "ses_279a82a2bffeB5k8j3ZVqM7Rk6",
+    "ses_27969c220ffex1bczkjlslFfdo",
+    "ses_27969c3abffeV8GXPJEdyhbcI3",
+    "ses_27969c058ffeWZEoKLI27KVcCh"
   ],
-  "plan_name": "period-scenario-selector",
+  "plan_name": "analysis-layout-restructure",
   "agent": "atlas",
   "task_sessions": {
     "todo:1": {
       "task_key": "todo:1",
       "task_label": "1",
-      "task_title": "Install shadcn UI components (select, popover, calendar)",
-      "session_id": "ses_27a8a70e0ffeg1mVtgL3qC8mPq",
+      "task_title": "activeSubView state の4値拡張",
+      "session_id": "ses_27969c3abffeV8GXPJEdyhbcI3",
       "agent": "Sisyphus-Junior",
       "category": "quick",
-      "updated_at": "2026-04-13T06:11:27.101Z"
-    },
-    "todo:2": {
-      "task_key": "todo:2",
-      "task_label": "2",
-      "task_title": "Extend AnalysisState with targetMonth + ABC selection (TDD)",
-      "session_id": "ses_27a6e846dffeNkThimjBo6EaHW",
-      "agent": "Sisyphus-Junior",
-      "category": "unspecified-high",
-      "updated_at": "2026-04-13T07:09:58.585Z"
-    },
-    "todo:5": {
-      "task_key": "todo:5",
-      "task_label": "5",
-      "task_title": "GAS backend - commitUpload to per-sheet storage",
-      "session_id": "ses_27a4e168dffewlaHbcKWopFk2e",
-      "agent": "Sisyphus-Junior",
-      "category": "deep",
-      "updated_at": "2026-04-13T07:20:32.846Z"
-    },
-    "todo:6": {
-      "task_key": "todo:6",
-      "task_label": "6",
-      "task_title": "GAS backend - getAnalysisData from per-upload sheets",
-      "session_id": "ses_27a1ee03cffegndexd2WkNJsVG",
-      "agent": "Sisyphus-Junior",
-      "category": "deep",
-      "updated_at": "2026-04-13T08:15:27.351Z"
-    },
-    "todo:10": {
-      "task_key": "todo:10",
-      "task_label": "10",
-      "task_title": "Integrate filter bar into AnalysisHeader",
-      "session_id": "ses_27a024a05ffeZOB3w0TOX9tHbq",
-      "agent": "Sisyphus-Junior",
-      "category": "visual-engineering",
-      "updated_at": "2026-04-13T08:53:35.985Z"
-    },
-    "todo:13": {
-      "task_key": "todo:13",
-      "task_label": "13",
-      "task_title": "Remove ImportData references + cleanup",
-      "session_id": "ses_279e7b941ffeu5KbUbAUnKRKnG",
-      "agent": "Sisyphus-Junior",
-      "category": "quick",
-      "updated_at": "2026-04-13T09:09:12.502Z"
+      "updated_at": "2026-04-13T11:26:49.900Z"
     }
   }
 }
