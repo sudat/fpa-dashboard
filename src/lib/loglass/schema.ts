@@ -7,7 +7,17 @@ const nonEmptyString = z.string().trim().min(1);
 const positiveMonth = z.number().int().min(1).max(12);
 
 export const metricTypeSchema = z.enum(["予算", "実績", "見込"]);
-export const accountTypeSchema = z.enum(["収益", "費用", "資産", "負債", "その他"]);
+export const accountTypeSchema = z.enum([
+  "収益",
+  "収益(配賦明細)",
+  "収益(消去明細)",
+  "費用",
+  "費用(配賦明細)",
+  "費用(消去明細)",
+  "資産",
+  "負債",
+  "その他",
+]);
 export const periodTypeSchema = z.enum(["単月", "YTD", "着地見込"]);
 export const comparisonColumnSchema = z.enum(["A", "B", "B-A", "C", "B-C"]);
 export const departmentScopeSchema = z.enum(["全社", "事業部"]);
