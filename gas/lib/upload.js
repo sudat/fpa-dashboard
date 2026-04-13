@@ -4,8 +4,6 @@
 
 var Upload = Upload || {};
 
-var IMPORT_DATA_SHEET = 'ImportData';
-
 // ScenarioKind label mapping (mirrors domain scenario-label.ts)
 var SCENARIO_KIND_LABEL = {
   actual: '実績',
@@ -237,18 +235,38 @@ Upload.commitUpload = function (workbookDataBase64, scenarioInput, confirmedRepl
  * @returns {{ importData: Array<Object>, accountMaster: Array<Object>, departmentMaster: Array<Object> }}
  */
 Upload.getAnalysisData = function (scenarioFamily, targetMonth) {
-  var rows = SheetUtils.readAllRows(IMPORT_DATA_SHEET);
+  var normalizedTargetMonth = Upload._normalizePeriod(targetMonth);
+  var history = History.getUploadHistory();
+  var rows = [];
+
+  for (var i = 0; i < history.length; i++) {
+    var entry = history[i];
+    if (entry.replacementIdentity.scenarioFamily !== scenarioFamily) {
+      continue;
+    }
+
+    var sheetName = entry.sheetName || ('upload_' + entry.uploadId);
+    var sheetRows = SheetUtils.readAllRows(sheetName);
+    if (sheetRows.length === 0) {
+      continue;
+    }
+
+    rows = rows.concat(sheetRows);
+  }
 
   var filtered = rows.filter(function (row) {
     var scenario = String(row[0]).trim();
     var ym = Upload._normalizePeriod(row[1]);
+    if (ym !== normalizedTargetMonth) {
+      return false;
+    }
     if (scenarioFamily === 'actual') {
-      return scenario === '実績' && ym === targetMonth;
+      return scenario === '実績';
     }
     if (scenarioFamily === 'budget') {
-      return (scenario.indexOf('予算') >= 0 || scenario.indexOf('計画') >= 0) && ym === targetMonth;
+      return scenario.indexOf('予算') >= 0 || scenario.indexOf('計画') >= 0;
     }
-    return scenario !== '実績' && scenario.indexOf('予算') < 0 && scenario.indexOf('計画') < 0 && ym === targetMonth;
+    return scenario !== '実績' && scenario.indexOf('予算') < 0 && scenario.indexOf('計画') < 0;
   });
 
   var importData = filtered.map(function (row) {

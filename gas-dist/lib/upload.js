@@ -4,8 +4,6 @@
 
 var Upload = Upload || {};
 
-var IMPORT_DATA_SHEET = 'ImportData';
-
 // ScenarioKind label mapping (mirrors domain scenario-label.ts)
 var SCENARIO_KIND_LABEL = {
   actual: '実績',
@@ -26,12 +24,6 @@ var XLSX_COL = {
   DEPT:             8,
   AMOUNT:           9,
 };
-
-var IMPORT_DATA_HEADER = [
-  'scenarioKey', 'yearMonth', 'accountCode', 'extAccountCode',
-  'accountName', 'accountType', 'deptCode', 'extDeptCode',
-  'deptName', 'amount',
-];
 
 /**
  * Normalize a date value to "yyyy-MM" format.
@@ -77,30 +69,42 @@ Upload._generateScenarioLabel = function (scenarioInput) {
 
 /**
  * Parse base64-encoded xlsx workbook using GAS Spreadsheet service.
- * Creates a temporary spreadsheet, reads data, trashes it.
+ * Reads rows for preview/metadata and can optionally persist the converted sheet.
  * @param {string} workbookDataBase64 - Base64 encoded xlsx
- * @returns {Array<Array<?>>} Parsed rows (excluding header)
+ * @param {Object=} options - { sheetName?: string }
+ * @returns {Array<Array<?>>|{ rows: Array<Array<?>>, sheetName: string }}
  */
-Upload._parseXlsx = function (workbookDataBase64) {
+Upload._parseXlsx = function (workbookDataBase64, options) {
   var decoded = Utilities.base64Decode(workbookDataBase64);
   var blob = Utilities.newBlob(decoded, MimeType.GOOGLE_SHEETS, 'temp_upload.xlsx');
 
   var tempFile = DriveApp.createFile(blob);
   var tempId = tempFile.getId();
+  var shouldKeepSheet = !!(options && options.sheetName);
 
-  try {
-    var tempSs = SpreadsheetApp.openById(tempId);
-    var sheet = tempSs.getSheets()[0];
-    var data = sheet.getDataRange().getValues();
+  var tempSs = SpreadsheetApp.openById(tempId);
+  var sourceSheet = tempSs.getSheets()[0];
+  var data = sourceSheet.getDataRange().getValues();
 
-    if (data.length <= 1) return [];
-
-    return data.slice(1).filter(function (row) {
+  var rows = [];
+  if (data.length > 1) {
+    rows = data.slice(1).filter(function (row) {
       return row.length >= 10 && String(row[XLSX_COL.SCENARIO]).trim() !== '';
     });
-  } finally {
-    DriveApp.getFileById(tempId).setTrashed(true);
   }
+
+  if (!shouldKeepSheet) {
+    DriveApp.getFileById(tempId).setTrashed(true);
+    return rows;
+  }
+
+  var targetSheet = sourceSheet.copyTo(SheetUtils.getSpreadsheet());
+  targetSheet.setName(options.sheetName);
+
+  return {
+    rows: rows,
+    sheetName: options.sheetName,
+  };
 };
 
 /**
@@ -149,7 +153,7 @@ Upload.previewUpload = function (workbookDataBase64, scenarioInput) {
 };
 
 /**
- * Commit an upload: archive to Drive, persist to Sheet, record history.
+ * Commit an upload: archive to Drive, persist to per-upload sheet, record history.
  * @param {string} workbookDataBase64 - Base64 encoded xlsx
  * @param {Object} scenarioInput - { kind, targetMonth, forecastStart? }
  * @param {Object|null} confirmedReplacement - Replacement warning object if confirmed
@@ -169,29 +173,27 @@ Upload.commitUpload = function (workbookDataBase64, scenarioInput, confirmedRepl
     }
   }
 
+  var uploader = Session.getActiveUser().getEmail();
+  var timestamp = SheetUtils.now();
+  var uploadId = SheetUtils.generateId();
+  var sheetName = 'upload_' + uploadId;
+
+  if (conflict && confirmedReplacement) {
+    var oldSheetName = conflict.sheetName || ('upload_' + conflict.uploadId);
+    var oldSheet = SheetUtils.getSpreadsheet().getSheetByName(oldSheetName);
+    if (oldSheet) {
+      SheetUtils.getSpreadsheet().deleteSheet(oldSheet);
+    }
+  }
+
   var decoded = Utilities.base64Decode(workbookDataBase64);
   var blob = Utilities.newBlob(decoded, MimeType.MICROSOFT_EXCEL, 'upload.xlsx');
 
   var fileName = scenarioInput.kind + '_' + scenarioInput.targetMonth + '_' + SheetUtils.now() + '.xlsx';
   var archive = Storage.archiveToDrive(fileName, blob);
 
-  var dataRows = Upload._parseXlsx(workbookDataBase64);
-  var normalizedRows = Upload._normalizeRows(dataRows);
-
-  var sheet = SheetUtils.getOrCreateSheet(IMPORT_DATA_SHEET);
-
-  if (sheet.getLastRow() === 0) {
-    sheet.appendRow(IMPORT_DATA_HEADER);
-  }
-
-  if (normalizedRows.length > 0) {
-    var startRow = sheet.getLastRow() + 1;
-    sheet.getRange(startRow, 1, normalizedRows.length, normalizedRows[0].length).setValues(normalizedRows);
-  }
-
-  var uploader = Session.getActiveUser().getEmail();
-  var timestamp = SheetUtils.now();
-  var uploadId = SheetUtils.generateId();
+  var parsed = Upload._parseXlsx(workbookDataBase64, { sheetName: sheetName });
+  var dataRows = parsed.rows;
 
   var metadata = {
     uploadId: uploadId,
@@ -210,6 +212,7 @@ Upload.commitUpload = function (workbookDataBase64, scenarioInput, confirmedRepl
     fileName: fileName,
     driveFileId: archive.fileId,
     rowCount: dataRows.length,
+    sheetName: parsed.sheetName,
   };
 
   History.addUploadEntry(metadata);
@@ -226,49 +229,44 @@ Upload.commitUpload = function (workbookDataBase64, scenarioInput, confirmedRepl
 };
 
 /**
- * Normalize raw xlsx rows into ImportData format.
- * @param {Array<Array<?>>} dataRows
- * @returns {Array<Array<?>>}
- */
-Upload._normalizeRows = function (dataRows) {
-  var result = [];
-  for (var i = 0; i < dataRows.length; i++) {
-    var row = dataRows[i];
-    result.push([
-      String(row[XLSX_COL.SCENARIO]).trim(),
-      Upload._normalizePeriod(row[XLSX_COL.DATE]),
-      String(row[XLSX_COL.ACCOUNT_CODE]).trim(),
-      String(row[XLSX_COL.EXT_ACCOUNT_CODE]).trim(),
-      String(row[XLSX_COL.ACCOUNT]).trim(),
-      String(row[XLSX_COL.ACCOUNT_TYPE]).trim(),
-      String(row[XLSX_COL.DEPT_CODE]).trim(),
-      String(row[XLSX_COL.EXT_DEPT_CODE]).trim(),
-      String(row[XLSX_COL.DEPT]).trim(),
-      Number(row[XLSX_COL.AMOUNT]) || 0,
-    ]);
-  }
-  return result;
-};
-
-/**
  * Get analysis-ready data for a scenario family and target month.
  * @param {string} scenarioFamily - "actual" | "budget" | "forecast"
  * @param {string} targetMonth - "YYYY-MM" format
  * @returns {{ importData: Array<Object>, accountMaster: Array<Object>, departmentMaster: Array<Object> }}
  */
 Upload.getAnalysisData = function (scenarioFamily, targetMonth) {
-  var rows = SheetUtils.readAllRows(IMPORT_DATA_SHEET);
+  var normalizedTargetMonth = Upload._normalizePeriod(targetMonth);
+  var history = History.getUploadHistory();
+  var rows = [];
+
+  for (var i = 0; i < history.length; i++) {
+    var entry = history[i];
+    if (entry.replacementIdentity.scenarioFamily !== scenarioFamily) {
+      continue;
+    }
+
+    var sheetName = entry.sheetName || ('upload_' + entry.uploadId);
+    var sheetRows = SheetUtils.readAllRows(sheetName);
+    if (sheetRows.length === 0) {
+      continue;
+    }
+
+    rows = rows.concat(sheetRows);
+  }
 
   var filtered = rows.filter(function (row) {
     var scenario = String(row[0]).trim();
     var ym = Upload._normalizePeriod(row[1]);
+    if (ym !== normalizedTargetMonth) {
+      return false;
+    }
     if (scenarioFamily === 'actual') {
-      return scenario === '実績' && ym === targetMonth;
+      return scenario === '実績';
     }
     if (scenarioFamily === 'budget') {
-      return (scenario.indexOf('予算') >= 0 || scenario.indexOf('計画') >= 0) && ym === targetMonth;
+      return scenario.indexOf('予算') >= 0 || scenario.indexOf('計画') >= 0;
     }
-    return scenario !== '実績' && scenario.indexOf('予算') < 0 && scenario.indexOf('計画') < 0 && ym === targetMonth;
+    return scenario !== '実績' && scenario.indexOf('予算') < 0 && scenario.indexOf('計画') < 0;
   });
 
   var importData = filtered.map(function (row) {
