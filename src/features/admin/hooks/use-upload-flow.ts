@@ -3,6 +3,7 @@ import type { ScenarioKind, ScenarioInput, ReplacementWarning, UploadMetadata } 
 import { scenarioInputSchema } from "@/lib/domain/upload-contract"
 import { gasClient, isGasAvailable, type UploadPreview } from "@/lib/gas/gas-client"
 import { generateScenarioLabel } from "@/lib/domain/scenario-label"
+import { detectScenariosFromBase64 } from "../lib/detect-client"
 
 export type UploadPhase =
   | "idle"
@@ -144,18 +145,25 @@ export function useUploadFlow() {
     try {
       const base64 = await fileToBase64(file)
       fileBase64Ref.current = base64
+      abortRef.current = false
+
+      // クライアント側で1列目・2列目のみ即時検出（GASラウンドトリップなし）
+      const detected = detectScenariosFromBase64(base64)
+      const { scenarioInput, generatedLabel } = autoPopulateFromDetected(detected)
 
       setState({
         ...INITIAL_STATE,
-        phase: "previewing",
+        phase: "file_selected",
         file,
         fileBase64: base64,
+        detectedScenarios: detected.length > 0 ? detected : null,
+        scenarioInput,
+        generatedLabel,
       })
 
-      abortRef.current = false
-
+      // GASプレビューはバックグラウンドで取得（部署・科目一覧、上書き警告）
       try {
-        const defaultInput = buildDefaultScenarioInput()
+        const defaultInput = scenarioInput ?? buildDefaultScenarioInput()
         const useMock = !isGasAvailable()
         const result = useMock
           ? mockPreviewUpload(base64, defaultInput)
@@ -163,25 +171,14 @@ export function useUploadFlow() {
 
         if (abortRef.current) return
 
-        const detected = extractDetectedScenarios(result)
-        const { scenarioInput, generatedLabel } = autoPopulateFromDetected(detected)
-
         setState((prev) => ({
           ...prev,
           preview: result.preview,
           replacementWarning: result.replacementWarning,
-          detectedScenarios: detected,
-          scenarioInput: scenarioInput ?? prev.scenarioInput,
-          generatedLabel: generatedLabel ?? prev.generatedLabel,
           phase: result.replacementWarning ? "warning_shown" : "file_selected",
         }))
-      } catch (e) {
-        if (abortRef.current) return
-        setState((prev) => ({
-          ...prev,
-          phase: "file_selected",
-          errorMessage: e instanceof Error ? e.message : "プレビュー取得エラー",
-        }))
+      } catch {
+        // プレビュー失敗はサイレントに無視（シナリオ検出は完了済み）
       }
     } catch (e) {
       setState((prev) => ({
