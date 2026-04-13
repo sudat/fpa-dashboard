@@ -1,6 +1,7 @@
 import type { ComparisonSet } from "@/features/admin/lib/normalize-loglass";
 import type { LoglassPeriodType } from "@/lib/loglass/types";
 
+import { applyBucketFilter } from "./bucket-filter";
 import { getMajorAccountNames, parseComparisonRowKey } from "./summary";
 
 export interface DifferenceItem {
@@ -25,7 +26,7 @@ export function selectDifferenceData(
 ): DifferenceData {
   const resolvedTargetAccountCode = targetAccountCode ?? null;
   const majorAccountSet = new Set(getMajorAccountNames());
-  const scopedRows = comparisonData
+  const scopedRows = applyBucketFilter(comparisonData)
     .filter((row) => row.periodType === periodType)
     .filter((row) => {
       const { departmentCode: rowDepartmentCode, accountCode } = parseComparisonRowKey(row.rowKey);

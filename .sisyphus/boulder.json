@@ -1,0 +1,87 @@
+{
+  "active_plan": "/usr/local/src/dev/wsl/google-apps-script/fpa-dashboard/.sisyphus/plans/admin-upload-table-radius-recovery.md",
+  "started_at": "2026-04-13T00:31:51.243Z",
+  "session_ids": [
+    "ses_27df1de0cffe8lLcoa76HHZeWo",
+    "ses_27bbb76dcffencDXbvkWE2wz29",
+    "ses_27bbb7926ffeHWjUgXqq9JK35H",
+    "ses_27bb3c8d0ffePwGyPgJyWzdgYP",
+    "ses_27bb3c6b1ffeKlL2G7EYdviP93",
+    "ses_27babbac3ffeLxhJZJ8zLjBkrB",
+    "ses_27ba07c26ffeLO7FwTLhZlJA7B",
+    "ses_27ba07a21ffevVaQMJF0mspUcy",
+    "ses_27b9369f7ffevdS3ibhFY0h15o",
+    "ses_27b8ba1dcffeQ5zBejry9763lP",
+    "ses_27b7ff574ffeSgRmAw70gJcqpK",
+    "ses_27b7ff7b6ffesw2fxA2GORwCVZ",
+    "ses_27b70a1d8ffe3TeQ7apW1ync5V",
+    "ses_27b6a6199ffeViWUAisUXRQUkK"
+  ],
+  "plan_name": "admin-upload-table-radius-recovery",
+  "agent": "atlas",
+  "task_sessions": {
+    "todo:1": {
+      "task_key": "todo:1",
+      "task_label": "1",
+      "task_title": "Freeze upload / master / analysis domain contract",
+      "session_id": "ses_27bbb7926ffeHWjUgXqq9JK35H",
+      "agent": "Sisyphus-Junior",
+      "category": "deep",
+      "updated_at": "2026-04-13T00:41:31.684Z"
+    },
+    "todo:2": {
+      "task_key": "todo:2",
+      "task_label": "2",
+      "task_title": "Add upload identity, overwrite, and A/B/C reassignment tests",
+      "session_id": "ses_27bb3c8d0ffePwGyPgJyWzdgYP",
+      "agent": "Sisyphus-Junior",
+      "category": "quick",
+      "updated_at": "2026-04-13T00:47:28.194Z"
+    },
+    "todo:5": {
+      "task_key": "todo:5",
+      "task_label": "5",
+      "task_title": "Build GAS backend upload/archive/history/master APIs",
+      "session_id": "ses_27babbac3ffeLxhJZJ8zLjBkrB",
+      "agent": "Sisyphus-Junior",
+      "category": "unspecified-high",
+      "updated_at": "2026-04-13T01:02:20.830Z"
+    },
+    "todo:7": {
+      "task_key": "todo:7",
+      "task_label": "7",
+      "task_title": "Extend current 管理 screen with real upload UI",
+      "session_id": "ses_27ba07c26ffeLO7FwTLhZlJA7B",
+      "agent": "Sisyphus-Junior",
+      "category": "visual-engineering",
+      "updated_at": "2026-04-13T01:16:41.714Z"
+    },
+    "todo:9": {
+      "task_key": "todo:9",
+      "task_label": "9",
+      "task_title": "Switch analysis source from fixture to persisted import data",
+      "session_id": "ses_27b9369f7ffevdS3ibhFY0h15o",
+      "agent": "Sisyphus-Junior",
+      "category": "deep",
+      "updated_at": "2026-04-13T01:26:29.204Z"
+    },
+    "todo:10": {
+      "task_key": "todo:10",
+      "task_label": "10",
+      "task_title": "Implement dynamic A/B/C reassignment and overwrite handling in comparison pipeline",
+      "session_id": "ses_27b8ba1dcffeQ5zBejry9763lP",
+      "agent": "Sisyphus-Junior",
+      "category": "deep",
+      "updated_at": "2026-04-13T01:37:17.056Z"
+    },
+    "todo:11": {
+      "task_key": "todo:11",
+      "task_label": "11",
+      "task_title": "Rebuild detail table into aggregate accordion view",
+      "session_id": "ses_27b6a6199ffeViWUAisUXRQUkK",
+      "agent": "Sisyphus-Junior",
+      "category": "unspecified-high",
+      "updated_at": "2026-04-13T02:18:57.221Z"
+    }
+  }
+}

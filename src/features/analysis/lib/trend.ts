@@ -1,6 +1,8 @@
 import { normalizeYearMonth, toFiscalYear } from "@/lib/loglass/schema";
 import type { LoglassNormalizedRow, LoglassPeriodType } from "@/lib/loglass/types";
 
+import { applyBucketFilter } from "./bucket-filter";
+
 export interface TrendDataPoint {
   yearMonth: string;
   amount: number | null;
@@ -24,8 +26,9 @@ export function selectTrendSeries(
 ): TrendSeries {
   const normalizedTargetMonth = normalizeYearMonth(targetMonth);
   const targetFiscalYear = toFiscalYear(normalizedTargetMonth);
-  const currentForecastScenarioKey = selectCurrentForecastScenarioKey(rows, targetFiscalYear);
-  const scopedRows = rows.filter(
+  const filteredRows = applyBucketFilter(rows);
+  const currentForecastScenarioKey = selectCurrentForecastScenarioKey(filteredRows, targetFiscalYear);
+  const scopedRows = filteredRows.filter(
     (row) =>
       row.account.code === accountCode &&
       row.department.code === departmentCode &&

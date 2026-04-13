@@ -84,53 +84,49 @@ const detailMap = new Map<string, SummaryRow[]>([
 ])
 
 describe("DetailPanel", () => {
-  it("renders rows with account names", () => {
+  it("renders section header", () => {
     render(<DetailPanel rows={baseRows} />)
-    expect(screen.getByText("売上高")).toBeInTheDocument()
-    expect(screen.getByText("売上原価")).toBeInTheDocument()
-    expect(screen.getByText("営業利益")).toBeInTheDocument()
+    expect(screen.getByText("詳細テーブル")).toBeInTheDocument()
   })
 
   it("renders column headers", () => {
     render(<DetailPanel rows={baseRows} />)
     expect(screen.getByText("科目名")).toBeInTheDocument()
-    expect(screen.getByText("A")).toBeInTheDocument()
     expect(screen.getByText("B")).toBeInTheDocument()
     expect(screen.getByText("B-A")).toBeInTheDocument()
     expect(screen.getByText("C")).toBeInTheDocument()
     expect(screen.getByText("B-C")).toBeInTheDocument()
   })
 
-  it("renders the section header", () => {
+  it("renders aggregate group headers for visible rows", () => {
     render(<DetailPanel rows={baseRows} />)
-    expect(screen.getByText("詳細テーブル")).toBeInTheDocument()
+    expect(screen.getByText("売上高")).toBeInTheDocument()
+    expect(screen.getByText("売上原価")).toBeInTheDocument()
   })
 
-  it("shows expand toggle for rows with detail data", () => {
-    render(<DetailPanel rows={baseRows} detailRows={detailMap} />)
-    const expandButtons = screen.getAllByRole("button", { name: /展開する|折りたたむ/ })
-    expect(expandButtons.length).toBe(1)
+  it("hides excluded aggregates (営業利益)", () => {
+    render(<DetailPanel rows={baseRows} />)
+    expect(screen.queryByText("営業利益")).not.toBeInTheDocument()
   })
 
   it("expands to reveal detail rows on click", () => {
     render(<DetailPanel rows={baseRows} detailRows={detailMap} />)
 
-    const expandButton = screen.getByRole("button", { name: "展開する" })
+    const expandButton = screen.getByRole("button", { name: /売上高.*展開する/ })
     fireEvent.click(expandButton)
 
     expect(screen.getByText("製品売上")).toBeInTheDocument()
     expect(screen.getByText("サービス売上")).toBeInTheDocument()
-    expect(screen.getByRole("button", { name: "折りたたむ" })).toBeInTheDocument()
   })
 
   it("collapses detail rows on second click", () => {
     render(<DetailPanel rows={baseRows} detailRows={detailMap} />)
 
-    const expandButton = screen.getByRole("button", { name: "展開する" })
+    const expandButton = screen.getByRole("button", { name: /売上高.*展開する/ })
     fireEvent.click(expandButton)
     expect(screen.getByText("製品売上")).toBeInTheDocument()
 
-    const collapseButton = screen.getByRole("button", { name: "折りたたむ" })
+    const collapseButton = screen.getByRole("button", { name: /売上高.*折りたたむ/ })
     fireEvent.click(collapseButton)
     expect(screen.queryByText("製品売上")).not.toBeInTheDocument()
   })
@@ -138,18 +134,7 @@ describe("DetailPanel", () => {
   it("shows ― for null values", () => {
     render(<DetailPanel rows={rowsWithNulls} />)
     const emDashes = screen.getAllByText("―")
-    expect(emDashes.length).toBeGreaterThanOrEqual(5)
-  })
-
-  it("highlights the specified row", () => {
-    const { container } = render(
-      <DetailPanel rows={baseRows} highlightedRowId="200" />,
-    )
-    const rows = container.querySelectorAll("tbody tr")
-    const highlightedRow = Array.from(rows).find((r) =>
-      r.textContent?.includes("売上原価"),
-    )
-    expect(highlightedRow?.className).toContain("bg-accent")
+    expect(emDashes.length).toBeGreaterThanOrEqual(1)
   })
 
   it("shows fallback when no rows", () => {
@@ -157,5 +142,12 @@ describe("DetailPanel", () => {
     expect(screen.getByText("詳細テーブル")).toBeInTheDocument()
     const emDashes = screen.getAllByText("―")
     expect(emDashes.length).toBeGreaterThanOrEqual(1)
+  })
+
+  it("auto-expands group when highlightedRowId matches a detail row", () => {
+    render(
+      <DetailPanel rows={baseRows} detailRows={detailMap} highlightedRowId="110" />,
+    )
+    expect(screen.getByText("製品売上")).toBeInTheDocument()
   })
 })

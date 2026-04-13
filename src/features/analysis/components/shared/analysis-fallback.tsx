@@ -49,7 +49,7 @@ export function AnalysisFallback({
           type="button"
           onClick={onRetry}
           className={cn(
-            "mt-1 rounded-md px-3 py-1 text-xs font-medium",
+            "mt-1 rounded-none px-3 py-1 text-xs font-medium",
             "bg-primary text-primary-foreground",
             "hover:bg-primary/90",
             "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2",

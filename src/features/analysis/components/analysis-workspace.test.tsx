@@ -3,8 +3,8 @@ import { describe, expect, it, vi, beforeEach, afterEach } from "vitest"
 
 import { generateComparisonData, normalizeRawRows } from "@/features/admin/lib/normalize-loglass"
 import { aggregateByDepartment } from "@/features/admin/lib/grouping"
+import { buildAnalysisFixtureRawRows } from "@/features/analysis/hooks/use-analysis-data"
 import type { SummaryRow } from "@/features/analysis/lib/summary"
-import { buildAnalysisFixtureRawRows } from "@/features/analysis/pages/analysis-page"
 import {
   DEFAULT_STATE,
   useAnalysisState,

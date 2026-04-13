@@ -30,14 +30,14 @@ export function DifferencePanel({ data, onBarClick, className }: DifferencePanel
             <div className="flex items-center gap-4 text-xs">
               <span className="flex items-center gap-1">
                 <span
-                  className="inline-block h-2.5 w-2.5 rounded-sm"
+                  className="inline-block h-2.5 w-2.5 rounded-none"
                   style={{ backgroundColor: CHART_COLORS.positive }}
                 />
                 好転
               </span>
               <span className="flex items-center gap-1">
                 <span
-                  className="inline-block h-2.5 w-2.5 rounded-sm"
+                  className="inline-block h-2.5 w-2.5 rounded-none"
                   style={{ backgroundColor: CHART_COLORS.negative }}
                 />
                 悪化

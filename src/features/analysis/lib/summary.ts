@@ -1,6 +1,8 @@
 import type { ComparisonSet } from "@/features/admin/lib/normalize-loglass";
 import type { LoglassPeriodType } from "@/lib/loglass/types";
 
+import { applyBucketFilter } from "./bucket-filter";
+
 export interface SummaryRow {
   accountCode: string;
   accountName: string;
@@ -26,8 +28,9 @@ export function selectSummaryRows(
 ): SummaryRow[] {
   const majorAccountNames = getMajorAccountNames();
   const majorAccountSet = new Set(majorAccountNames);
+  const filteredComparisonData = applyBucketFilter(comparisonData);
 
-  const summaryRows = comparisonData
+  const summaryRows = filteredComparisonData
     .filter((row) => row.periodType === periodType)
     .filter((row) => parseComparisonRowKey(row.rowKey).departmentCode === departmentCode)
     .filter((row) => majorAccountSet.has(row.accountName))

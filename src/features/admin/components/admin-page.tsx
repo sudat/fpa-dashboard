@@ -2,6 +2,7 @@ import { Button } from "@/components/ui/button"
 import { TYPOGRAPHY, SPACING } from "@/lib/ui/theme"
 import { ImportLog } from "./import-log"
 import { MasterDiffWarning } from "./master-diff-warning"
+import { UploadSection } from "./upload-section"
 
 export interface ImportResult {
   id: string
@@ -75,6 +76,7 @@ export function AdminPage({
     <div className={`flex flex-col ${SPACING.sectionGap}`}>
       <h1 className={TYPOGRAPHY.pageTitle}>管理画面</h1>
 
+      <UploadSection />
       <ImportLog results={importResults} />
       <MasterDiffWarning warnings={warnings} />
 

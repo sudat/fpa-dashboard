@@ -1,3 +1,8 @@
+export {
+  applyBucketFilter,
+  aggregateUnassigned,
+  filterExcludedFromAnalysis,
+} from "./bucket-filter";
 export { selectDifferenceData } from "./difference";
 export type { DifferenceData, DifferenceItem } from "./difference";
 export { getMajorAccountNames, selectSummaryRows } from "./summary";
