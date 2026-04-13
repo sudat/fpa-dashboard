@@ -118,7 +118,7 @@ Wave FINAL:
 
 ## TODOs
 
-- [ ] 1. コメント機能プレースホルダーUIの完全削除
+- [x] 1. コメント機能プレースホルダーUIの完全削除
 
   **What to do**:
   - `src/features/comments/` ディレクトリを丸ごと削除（3ファイル: comment-pane-shell.tsx, comment-pane-shell.test.tsx, index.ts）
