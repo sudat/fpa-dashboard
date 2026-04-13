@@ -17,12 +17,8 @@ function getCurrentUser() {
   return { email: email, name: name };
 }
 
-function previewUpload(workbookDataBase64, scenarioInput) {
-  return Upload.previewUpload(workbookDataBase64, scenarioInput);
-}
-
-function commitUpload(workbookDataBase64, scenarioInput, confirmedReplacement) {
-  return Upload.commitUpload(workbookDataBase64, scenarioInput, confirmedReplacement);
+function commitUpload(uploadRows, originalFileName, scenarioInput, confirmedReplacement) {
+  return Upload.commitUpload(uploadRows, originalFileName, scenarioInput, confirmedReplacement);
 }
 
 function getUploadHistory() {

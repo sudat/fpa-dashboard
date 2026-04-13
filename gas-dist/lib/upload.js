@@ -1,5 +1,5 @@
 // ============================================================
-// Upload — preview, commit, analysis data
+// Upload — commit, analysis data
 // ============================================================
 
 var Upload = Upload || {};
@@ -24,6 +24,19 @@ var XLSX_COL = {
   DEPT:             8,
   AMOUNT:           9,
 };
+
+var UPLOAD_SHEET_HEADER = [
+  '計画・実績',
+  '年月',
+  'ログラス科目コード',
+  '外部システム科目コード',
+  '科目',
+  '科目タイプ',
+  'ログラス部署コード',
+  '外部システム部署コード',
+  '部署',
+  '金額',
+];
 
 /**
  * Normalize a date value to "yyyy-MM" format.
@@ -67,99 +80,59 @@ Upload._generateScenarioLabel = function (scenarioInput) {
   return label;
 };
 
-/**
- * Parse base64-encoded xlsx workbook using GAS Spreadsheet service.
- * Reads rows for preview/metadata and can optionally persist the converted sheet.
- * @param {string} workbookDataBase64 - Base64 encoded xlsx
- * @param {Object=} options - { sheetName?: string }
- * @returns {Array<Array<?>>|{ rows: Array<Array<?>>, sheetName: string }}
- */
-Upload._parseXlsx = function (workbookDataBase64, options) {
-  var decoded = Utilities.base64Decode(workbookDataBase64);
-  var blob = Utilities.newBlob(decoded, MimeType.GOOGLE_SHEETS, 'temp_upload.xlsx');
+Upload._toSheetRow = function (uploadRow, rowNumber) {
+  var scenario = String(uploadRow['シナリオ'] || '').trim();
+  var yearMonth = Upload._normalizePeriod(uploadRow['年月度']);
+  var accountCode = String(uploadRow['科目コード'] || '').trim();
+  var externalAccountCode = String(uploadRow['外部科目コード'] || '').trim();
+  var account = String(uploadRow['科目'] || '').trim();
+  var accountType = String(uploadRow['科目タイプ'] || '').trim();
+  var deptCode = String(uploadRow['部署コード'] || '').trim();
+  var externalDeptCode = String(uploadRow['外部部署コード'] || '').trim();
+  var dept = String(uploadRow['部署'] || '').trim();
+  var amount = Number(uploadRow['金額']);
 
-  var tempFile = DriveApp.createFile(blob);
-  var tempId = tempFile.getId();
-  var shouldKeepSheet = !!(options && options.sheetName);
-
-  var tempSs = SpreadsheetApp.openById(tempId);
-  var sourceSheet = tempSs.getSheets()[0];
-  var data = sourceSheet.getDataRange().getValues();
-
-  var rows = [];
-  if (data.length > 1) {
-    rows = data.slice(1).filter(function (row) {
-      return row.length >= 10 && String(row[XLSX_COL.SCENARIO]).trim() !== '';
-    });
+  if (!scenario || !yearMonth || !accountCode || !account || !accountType || !deptCode || !dept || !isFinite(amount)) {
+    throw new Error('アップロード対象データ ' + rowNumber + ' 行目の形式が不正です。');
   }
 
-  if (!shouldKeepSheet) {
-    DriveApp.getFileById(tempId).setTrashed(true);
-    return rows;
+  return [
+    scenario,
+    yearMonth,
+    accountCode,
+    externalAccountCode,
+    account,
+    accountType,
+    deptCode,
+    externalDeptCode,
+    dept,
+    amount,
+  ];
+};
+
+Upload._buildSheetRows = function (uploadRows) {
+  if (!Array.isArray(uploadRows) || uploadRows.length === 0) {
+    throw new Error('アップロード対象データが空です。');
   }
 
-  var targetSheet = sourceSheet.copyTo(SheetUtils.getSpreadsheet());
-  targetSheet.setName(options.sheetName);
+  var rows = [UPLOAD_SHEET_HEADER.slice()];
+  for (var i = 0; i < uploadRows.length; i++) {
+    rows.push(Upload._toSheetRow(uploadRows[i], i + 2));
+  }
 
-  return {
-    rows: rows,
-    sheetName: options.sheetName,
-  };
+  return rows;
 };
 
 /**
- * Preview an upload: parse xlsx, check for replacement conflicts.
- * @param {string} workbookDataBase64 - Base64 encoded xlsx
- * @param {Object} scenarioInput - { kind, targetMonth, forecastStart? }
- * @returns {{ preview: { rawRowCount, departments, accounts, detectedScenarios }, replacementWarning: Object|null }}
- */
-Upload.previewUpload = function (workbookDataBase64, scenarioInput) {
-  var dataRows = Upload._parseXlsx(workbookDataBase64);
-
-  var departments = {};
-  var accounts = {};
-  for (var i = 0; i < dataRows.length; i++) {
-    var row = dataRows[i];
-    var dept = String(row[XLSX_COL.DEPT]).trim();
-    var acct = String(row[XLSX_COL.ACCOUNT]).trim();
-    departments[dept] = true;
-    accounts[acct] = true;
-  }
-
-  var detectedScenarios = Detect.detectScenarioInputs(dataRows);
-
-  var generatedLabel = Upload._generateScenarioLabel(scenarioInput);
-  var conflict = History.findReplacementConflict(generatedLabel, scenarioInput.kind);
-
-  var replacementWarning = null;
-  if (conflict) {
-    replacementWarning = {
-      existingUploadId: conflict.uploadId,
-      generatedLabel: generatedLabel,
-      scenarioFamily: scenarioInput.kind,
-      message: '同じシナリオ種別・ラベルのアップロードが既に存在します。上書き確認が必要です。',
-    };
-  }
-
-  return {
-    preview: {
-      rawRowCount: dataRows.length,
-      departments: Object.keys(departments),
-      accounts: Object.keys(accounts),
-      detectedScenarios: detectedScenarios,
-    },
-    replacementWarning: replacementWarning,
-  };
-};
-
-/**
- * Commit an upload: archive to Drive, persist to per-upload sheet, record history.
- * @param {string} workbookDataBase64 - Base64 encoded xlsx
+ * Commit an upload: persist normalized upload rows to per-upload sheet and record history.
+ * @param {Array<Object>} uploadRows - Client-parsed upload rows
+ * @param {string} originalFileName - Selected file name from the browser
  * @param {Object} scenarioInput - { kind, targetMonth, forecastStart? }
  * @param {Object|null} confirmedReplacement - Replacement warning object if confirmed
  * @returns {Object} UploadMetadata
  */
-Upload.commitUpload = function (workbookDataBase64, scenarioInput, confirmedReplacement) {
+Upload.commitUpload = function (uploadRows, originalFileName, scenarioInput, confirmedReplacement) {
+  var sheetRows = Upload._buildSheetRows(uploadRows);
   var generatedLabel = Upload._generateScenarioLabel(scenarioInput);
   var conflict = History.findReplacementConflict(generatedLabel, scenarioInput.kind);
 
@@ -169,7 +142,7 @@ Upload.commitUpload = function (workbookDataBase64, scenarioInput, confirmedRepl
 
   if (conflict && confirmedReplacement) {
     if (confirmedReplacement.existingUploadId !== conflict.uploadId) {
-      throw new Error('上書き対象が変更されています。再度プレビューしてください。');
+      throw new Error('上書き対象が変更されています。再度アップロード実行してください。');
     }
   }
 
@@ -186,14 +159,9 @@ Upload.commitUpload = function (workbookDataBase64, scenarioInput, confirmedRepl
     }
   }
 
-  var decoded = Utilities.base64Decode(workbookDataBase64);
-  var blob = Utilities.newBlob(decoded, MimeType.MICROSOFT_EXCEL, 'upload.xlsx');
+  SheetUtils.writeRows(sheetName, sheetRows);
 
-  var fileName = scenarioInput.kind + '_' + scenarioInput.targetMonth + '_' + SheetUtils.now() + '.xlsx';
-  var archive = Storage.archiveToDrive(fileName, blob);
-
-  var parsed = Upload._parseXlsx(workbookDataBase64, { sheetName: sheetName });
-  var dataRows = parsed.rows;
+  var normalizedFileName = String(originalFileName || '').trim() || (scenarioInput.kind + '_' + scenarioInput.targetMonth + '.xlsx');
 
   var metadata = {
     uploadId: uploadId,
@@ -209,10 +177,9 @@ Upload.commitUpload = function (workbookDataBase64, scenarioInput, confirmedRepl
       generatedLabel: generatedLabel,
       scenarioFamily: scenarioInput.kind,
     },
-    fileName: fileName,
-    driveFileId: archive.fileId,
-    rowCount: dataRows.length,
-    sheetName: parsed.sheetName,
+    fileName: normalizedFileName,
+    rowCount: sheetRows.length - 1,
+    sheetName: sheetName,
   };
 
   History.addUploadEntry(metadata);

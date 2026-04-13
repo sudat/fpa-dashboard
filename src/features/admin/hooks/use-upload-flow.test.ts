@@ -2,19 +2,19 @@ import { renderHook, act } from "@testing-library/react"
 import { describe, it, expect, vi, beforeEach, afterEach } from "vitest"
 
 const mocks = vi.hoisted(() => ({
-  detectScenariosFromBase64: vi.fn(),
-  previewUpload: vi.fn(),
+  parseUploadWorkbookFromBase64: vi.fn(),
+  getUploadHistory: vi.fn(),
   commitUpload: vi.fn(),
   isGasAvailable: vi.fn(() => true),
 }))
 
 vi.mock("../lib/detect-client", () => ({
-  detectScenariosFromBase64: mocks.detectScenariosFromBase64,
+  parseUploadWorkbookFromBase64: mocks.parseUploadWorkbookFromBase64,
 }))
 
 vi.mock("@/lib/gas/gas-client", () => ({
   gasClient: {
-    previewUpload: mocks.previewUpload,
+    getUploadHistory: mocks.getUploadHistory,
     commitUpload: mocks.commitUpload,
   },
   isGasAvailable: mocks.isGasAvailable,
@@ -63,6 +63,23 @@ function createDetectedScenarios() {
   ]
 }
 
+function createUploadRows() {
+  return [
+    {
+      シナリオ: "実績",
+      年月度: "2026-02",
+      科目コード: "A001",
+      外部科目コード: "",
+      科目: "売上高",
+      科目タイプ: "収益",
+      部署コード: "D001",
+      外部部署コード: "",
+      部署: "営業部",
+      金額: 1200000,
+    },
+  ]
+}
+
 function createUploadMetadata() {
   return {
     uploadId: "upload-1",
@@ -84,19 +101,15 @@ function createUploadMetadata() {
 
 beforeEach(() => {
   vi.stubGlobal("FileReader", ImmediateFileReader)
-  mocks.detectScenariosFromBase64.mockReset()
-  mocks.previewUpload.mockReset()
+  mocks.parseUploadWorkbookFromBase64.mockReset()
+  mocks.getUploadHistory.mockReset()
   mocks.commitUpload.mockReset()
   mocks.isGasAvailable.mockReset()
-  mocks.detectScenariosFromBase64.mockReturnValue(createDetectedScenarios())
-  mocks.previewUpload.mockResolvedValue({
-    preview: {
-      rawRowCount: 240,
-      departments: ["全社"],
-      accounts: ["売上高"],
-    },
-    replacementWarning: null,
+  mocks.parseUploadWorkbookFromBase64.mockReturnValue({
+    rawRows: createUploadRows(),
+    detectedScenarios: createDetectedScenarios(),
   })
+  mocks.getUploadHistory.mockResolvedValue([])
   mocks.commitUpload.mockResolvedValue(createUploadMetadata())
   mocks.isGasAvailable.mockReturnValue(true)
 })
@@ -132,16 +145,17 @@ describe("useUploadFlow", () => {
   })
 
   it("sets a reading state while FileReader is still pending", async () => {
-    let reader: ControlledFileReader | null = null
-
     class ControlledFileReader {
+      static latest: ControlledFileReader | null = null
       onload: ((event: ProgressEvent<FileReader>) => void) | null = null
       onerror: (() => void) | null = null
       result: string | null = null
 
-      readAsDataURL() {
-        reader = this
+      constructor() {
+        ControlledFileReader.latest = this
       }
+
+      readAsDataURL() {}
 
       resolve() {
         this.result = "data:application/vnd.openxmlformats-officedocument.spreadsheetml.sheet;base64,dGVzdA=="
@@ -161,7 +175,7 @@ describe("useUploadFlow", () => {
     expect(result.current.state.isReadingFile).toBe(true)
 
     await act(async () => {
-      reader?.resolve()
+      ControlledFileReader.latest?.resolve()
       await pending
       await Promise.resolve()
     })
@@ -170,45 +184,44 @@ describe("useUploadFlow", () => {
     expect(result.current.state.file?.name).toBe("data.xlsx")
   })
 
-  it("ignores a stale preview response after upload has started", async () => {
-    let resolvePreview: ((value: unknown) => void) | null = null
-    mocks.previewUpload.mockImplementation(
-      () =>
-        new Promise((resolve) => {
-          resolvePreview = resolve
-        }),
-    )
-
+  it("shows a replacement warning before upload when the same label already exists", async () => {
     const { result } = renderHook(() => useUploadFlow())
+    mocks.getUploadHistory.mockResolvedValue([createUploadMetadata()])
 
     await act(async () => {
       await result.current.selectFile(createFile())
     })
 
-    expect(result.current.state.isPreviewLoading).toBe(true)
+    await act(async () => {
+      await result.current.commit()
+    })
+
+    expect(result.current.state.phase).toBe("warning_shown")
+    expect(result.current.state.replacementWarning?.existingUploadId).toBe("upload-1")
+    expect(mocks.commitUpload).not.toHaveBeenCalled()
+  })
+
+  it("commits after confirmation when a replacement warning is shown", async () => {
+    const { result } = renderHook(() => useUploadFlow())
+    mocks.getUploadHistory.mockResolvedValue([createUploadMetadata()])
+
+    await act(async () => {
+      await result.current.selectFile(createFile())
+    })
+
+    await act(async () => {
+      await result.current.commit()
+    })
+
+    expect(result.current.state.phase).toBe("warning_shown")
 
     await act(async () => {
       await result.current.commit()
     })
 
     expect(result.current.state.phase).toBe("success")
-
-    await act(async () => {
-      resolvePreview?.({
-        preview: {
-          rawRowCount: 240,
-          departments: ["全社"],
-          accounts: ["売上高"],
-          detectedScenarios: createDetectedScenarios(),
-        },
-        replacementWarning: null,
-      })
-      await Promise.resolve()
-    })
-
-    expect(result.current.state.phase).toBe("success")
-    expect(result.current.state.isPreviewLoading).toBe(false)
     expect(result.current.state.result?.generatedLabel).toBe("2026/02月実績(見込:3月~)")
+    expect(mocks.commitUpload).toHaveBeenCalledTimes(1)
   })
 
   it("dismisses a validation error back to idle when no file is selected", async () => {

@@ -11,7 +11,6 @@ import { TYPOGRAPHY, SPACING } from "@/lib/ui/theme"
 import { cn } from "@/lib/utils"
 import { useUploadFlow } from "../hooks/use-upload-flow"
 import { ScenarioInputForm } from "./scenario-input-form"
-import { UploadPreview } from "./upload-preview"
 import { UploadStatus } from "./upload-status"
 
 const ACCEPTED_EXTENSIONS = [".xlsx", ".xls"]
@@ -23,6 +22,7 @@ export function UploadSection() {
     commit,
     reset,
     dismissError,
+    dismissReplacementWarning,
   } = useUploadFlow()
 
   const fileInputRef = useRef<HTMLInputElement>(null)
@@ -33,8 +33,8 @@ export function UploadSection() {
   const isUploading = state.phase === "uploading"
   const isInteractionDisabled = isReadingFile || isUploading
   const canCommit =
-    (state.phase === "file_selected" || state.phase === "warning_shown") &&
-    state.fileBase64 !== null &&
+    state.phase === "file_selected" &&
+    state.file !== null &&
     state.scenarioInput !== null &&
     !isReadingFile &&
     !isUploading
@@ -77,16 +77,16 @@ export function UploadSection() {
   }, [commit])
 
   const handleCancelReplacement = useCallback(() => {
-    reset()
-  }, [reset])
+    dismissReplacementWarning()
+  }, [dismissReplacementWarning])
 
   const handleRetry = useCallback(() => {
-    if (state.fileBase64 && state.scenarioInput) {
+    if (state.file && state.scenarioInput) {
       void commit()
       return
     }
     dismissError()
-  }, [commit, dismissError, state.fileBase64, state.scenarioInput])
+  }, [commit, dismissError, state.file, state.scenarioInput])
 
   return (
     <Card>
@@ -179,16 +179,35 @@ export function UploadSection() {
                 isLoading={state.isReadingFile}
               />
 
-              {state.file && (state.preview || state.replacementWarning || state.isPreviewLoading) && (
-                <UploadPreview
-                  fileName={state.file?.name ?? null}
-                  fileSize={state.file?.size ?? null}
-                  previewData={state.preview}
-                  replacementWarning={state.replacementWarning}
-                  isLoading={state.isPreviewLoading}
-                  onConfirmReplacement={handleConfirmReplacement}
-                  onCancelReplacement={handleCancelReplacement}
-                />
+              {state.phase === "warning_shown" && state.replacementWarning && (
+                <div className="rounded-md border border-amber-500/30 bg-amber-500/10 px-4 py-3">
+                  <div className="flex flex-col gap-2">
+                    <div className="flex items-center gap-2">
+                      <span className="text-amber-600 text-sm font-medium dark:text-amber-400">⚠ 上書き警告</span>
+                    </div>
+                    <p className={TYPOGRAPHY.small}>{state.replacementWarning.message}</p>
+                    <p className={TYPOGRAPHY.small}>
+                      既存ラベル: <strong className="text-foreground">{state.replacementWarning.generatedLabel}</strong>
+                    </p>
+                    <div className="flex gap-2 mt-1">
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        onClick={handleConfirmReplacement}
+                        className="border-amber-500/30 bg-amber-500/10 text-amber-600 hover:bg-amber-500/20 hover:text-amber-700 dark:text-amber-400 dark:hover:text-amber-300"
+                      >
+                        上書きしてアップロード
+                      </Button>
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        onClick={handleCancelReplacement}
+                      >
+                        キャンセル
+                      </Button>
+                    </div>
+                  </div>
+                </div>
               )}
 
               <div className="flex items-center gap-3">

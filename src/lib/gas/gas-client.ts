@@ -6,9 +6,10 @@ import type {
 } from "@/lib/domain/upload-contract";
 import {
   uploadMetadataSchema,
-  replacementWarningSchema,
   scenarioInputSchema,
 } from "@/lib/domain/upload-contract";
+import type { LoglessRawRow } from "@/lib/loglass/types";
+import { loglassRawRowArraySchema } from "@/lib/loglass/schema";
 import type {
   AccountMasterEntry,
   DepartmentMasterEntry,
@@ -24,25 +25,6 @@ import { z } from "zod";
 export interface CurrentUser {
   email: string;
   name: string;
-}
-
-export interface UploadPreview {
-  preview: {
-    rawRowCount: number;
-    departments: string[];
-    accounts: string[];
-    detectedScenarios?: Array<{
-      kind: string;
-      targetMonth: string;
-      monthCount: number;
-      rowCount: number;
-      scenarioKey?: string;
-      firstMonth?: string;
-      lastMonth?: string;
-      forecastStart?: string;
-    }>;
-  };
-  replacementWarning: ReplacementWarning | null;
 }
 
 export interface AnalysisData {
@@ -66,8 +48,7 @@ const currentUserSchema = z.object({
   email: z.string().min(1),
   name: z.string().min(1),
 });
-
-const yearMonthSchema = z.string().regex(/^\d{4}-\d{2}$/);
+const uploadFileNameSchema = z.string().trim().min(1);
 
 const importDataRowSchema = z.object({
   scenarioKey: z.string().min(1),
@@ -88,27 +69,6 @@ const analysisDataSchema = z.object({
   departmentMaster: z.array(departmentMasterEntrySchema),
 });
 
-const detectedScenarioSchema = z.object({
-  kind: z.string(),
-  targetMonth: yearMonthSchema,
-  monthCount: z.number().int().positive(),
-  rowCount: z.number().int().nonnegative(),
-  scenarioKey: z.string().optional(),
-  firstMonth: yearMonthSchema.optional(),
-  lastMonth: yearMonthSchema.optional(),
-  forecastStart: yearMonthSchema.optional(),
-});
-
-const uploadPreviewSchema = z.object({
-  preview: z.object({
-    rawRowCount: z.number().int().nonnegative(),
-    departments: z.array(z.string()),
-    accounts: z.array(z.string()),
-    detectedScenarios: z.array(detectedScenarioSchema).optional(),
-  }),
-  replacementWarning: replacementWarningSchema.nullable(),
-});
-
 const uploadHistorySchema = z.array(uploadMetadataSchema);
 
 // google.script.run adapter — wraps callback-based API into Promises
@@ -119,8 +79,7 @@ declare global {
       script?: {
         run?: GasRunnerWithHandlers & {
           getCurrentUser: GasRunner<() => CurrentUser>;
-          previewUpload: GasRunner<(workbookDataBase64: string, scenarioInput: ScenarioInput) => UploadPreview>;
-          commitUpload: GasRunner<(workbookDataBase64: string, scenarioInput: ScenarioInput, confirmedReplacement: ReplacementWarning | null) => UploadMetadata>;
+          commitUpload: GasRunner<(uploadRows: LoglessRawRow[], originalFileName: string, scenarioInput: ScenarioInput, confirmedReplacement: ReplacementWarning | null) => UploadMetadata>;
           getUploadHistory: GasRunner<() => UploadMetadata[]>;
           getAccountMaster: GasRunner<() => AccountMasterEntry[]>;
           saveAccountMaster: GasRunner<(entries: AccountMasterEntry[]) => void>;
@@ -211,20 +170,16 @@ export const gasClient = {
     );
   },
 
-  previewUpload(workbookDataBase64: string, scenarioInput: ScenarioInput): Promise<UploadPreview> {
-    const validated = scenarioInputSchema.parse(scenarioInput);
-    return runGas<UploadPreview>("previewUpload", workbookDataBase64, validated).then((r) =>
-      uploadPreviewSchema.parse(r),
-    );
-  },
-
   commitUpload(
-    workbookDataBase64: string,
+    uploadRows: LoglessRawRow[],
+    originalFileName: string,
     scenarioInput: ScenarioInput,
     confirmedReplacement: ReplacementWarning | null,
   ): Promise<UploadMetadata> {
+    const validatedRows = loglassRawRowArraySchema.parse(uploadRows);
+    const validatedFileName = uploadFileNameSchema.parse(originalFileName);
     const validated = scenarioInputSchema.parse(scenarioInput);
-    return runGas<UploadMetadata>("commitUpload", workbookDataBase64, validated, confirmedReplacement).then((r) =>
+    return runGas<UploadMetadata>("commitUpload", validatedRows, validatedFileName, validated, confirmedReplacement).then((r) =>
       uploadMetadataSchema.parse(r),
     );
   },

@@ -99,42 +99,23 @@ describe("gasClient", () => {
     await expect(promise).rejects.toThrow();
   });
 
-  it("previewUpload resolves with validated preview", async () => {
-    const { gasClient } = await import("@/lib/gas/gas-client");
-
-    const scenarioInput = { kind: "actual" as const, targetMonth: "2026-01" };
-    const promise = gasClient.previewUpload("base64data", scenarioInput);
-
-    mockSuccessHandlers["previewUpload"]({
-      preview: { rawRowCount: 100, departments: ["営業部"], accounts: ["売上高"] },
-      replacementWarning: null,
-    });
-
-    const result = await promise;
-    expect(result.preview.rawRowCount).toBe(100);
-    expect(result.replacementWarning).toBeNull();
-  });
-
-  it("previewUpload passes validated scenarioInput to GAS", async () => {
-    const { gasClient } = await import("@/lib/gas/gas-client");
-
-    const scenarioInput = { kind: "actual" as const, targetMonth: "2026-01" };
-    const promise = gasClient.previewUpload("data", scenarioInput);
-
-    mockSuccessHandlers["previewUpload"]({
-      preview: { rawRowCount: 0, departments: [], accounts: [] },
-      replacementWarning: null,
-    });
-
-    await promise;
-    expect(mockCalls["previewUpload"]?.[0]).toEqual(["data", { kind: "actual", targetMonth: "2026-01" }]);
-  });
-
   it("commitUpload resolves with validated UploadMetadata", async () => {
     const { gasClient } = await import("@/lib/gas/gas-client");
 
+    const uploadRows = [{
+      シナリオ: "実績",
+      年月度: "2026-01",
+      科目コード: "A001",
+      外部科目コード: "",
+      科目: "売上高",
+      科目タイプ: "収益",
+      部署コード: "D001",
+      外部部署コード: "",
+      部署: "営業部",
+      金額: 1000,
+    }];
     const scenarioInput = { kind: "actual" as const, targetMonth: "2026-01" };
-    const promise = gasClient.commitUpload("data", scenarioInput, null);
+    const promise = gasClient.commitUpload(uploadRows, "actual_2026-01.xlsx", scenarioInput, null);
 
     mockSuccessHandlers["commitUpload"]({
       uploadId: "abc-123",
@@ -152,6 +133,46 @@ describe("gasClient", () => {
     const result = await promise;
     expect(result.uploadId).toBe("abc-123");
     expect(result.generatedLabel).toBe("2026/01月実績");
+  });
+
+  it("commitUpload validates rows and sends the new GAS contract", async () => {
+    const { gasClient } = await import("@/lib/gas/gas-client");
+
+    const uploadRows = [{
+      シナリオ: "実績",
+      年月度: "2026-01",
+      科目コード: "A001",
+      外部科目コード: "",
+      科目: "売上高",
+      科目タイプ: "収益",
+      部署コード: "D001",
+      外部部署コード: "",
+      部署: "営業部",
+      金額: 1000,
+    }];
+    const scenarioInput = { kind: "actual" as const, targetMonth: "2026-01" };
+    const promise = gasClient.commitUpload(uploadRows, "actual_2026-01.xlsx", scenarioInput, null);
+
+    mockSuccessHandlers["commitUpload"]({
+      uploadId: "abc-123",
+      timestamp: "2026-01-15T10:30:00+09:00",
+      uploader: "test@example.com",
+      scenarioInput: { kind: "actual", targetMonth: "2026-01" },
+      generatedLabel: "2026/01月実績",
+      replacementIdentity: {
+        generatedLabel: "2026/01月実績",
+        scenarioFamily: "actual",
+      },
+      fileName: "actual_2026-01.xlsx",
+    });
+
+    await promise;
+    expect(mockCalls["commitUpload"]?.[0]).toEqual([
+      uploadRows,
+      "actual_2026-01.xlsx",
+      { kind: "actual", targetMonth: "2026-01" },
+      null,
+    ]);
   });
 
   it("getUploadHistory resolves with validated array", async () => {

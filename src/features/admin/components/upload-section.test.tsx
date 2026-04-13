@@ -7,6 +7,7 @@ const mocks = vi.hoisted(() => ({
   commit: vi.fn(),
   reset: vi.fn(),
   dismissError: vi.fn(),
+  dismissReplacementWarning: vi.fn(),
 }))
 
 vi.mock("../hooks/use-upload-flow", () => ({
@@ -18,16 +19,13 @@ import { UploadSection } from "./upload-section"
 const baseState = {
   phase: "idle" as const,
   file: null,
-  fileBase64: null,
   scenarioInput: null,
   generatedLabel: null,
-  preview: null,
   detectedScenarios: null,
   replacementWarning: null,
   result: null,
   errorMessage: null,
   isReadingFile: false,
-  isPreviewLoading: false,
 }
 
 beforeEach(() => {
@@ -36,6 +34,7 @@ beforeEach(() => {
   mocks.commit.mockReset()
   mocks.reset.mockReset()
   mocks.dismissError.mockReset()
+  mocks.dismissReplacementWarning.mockReset()
 })
 
 describe("UploadSection", () => {
@@ -49,6 +48,7 @@ describe("UploadSection", () => {
       commit: mocks.commit,
       reset: mocks.reset,
       dismissError: mocks.dismissError,
+      dismissReplacementWarning: mocks.dismissReplacementWarning,
     })
 
     render(<UploadSection />)
@@ -70,6 +70,7 @@ describe("UploadSection", () => {
       commit: mocks.commit,
       reset: mocks.reset,
       dismissError: mocks.dismissError,
+      dismissReplacementWarning: mocks.dismissReplacementWarning,
     })
 
     render(<UploadSection />)
