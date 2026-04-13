@@ -12,6 +12,7 @@ interface UploadPreviewProps {
     accounts: string[]
   } | null
   replacementWarning: ReplacementWarning | null
+  isLoading: boolean
   onConfirmReplacement: () => void
   onCancelReplacement: () => void
 }
@@ -27,6 +28,7 @@ export function UploadPreview({
   fileSize,
   previewData,
   replacementWarning,
+  isLoading,
   onConfirmReplacement,
   onCancelReplacement,
 }: UploadPreviewProps) {
@@ -39,6 +41,13 @@ export function UploadPreview({
           {fileSize != null && (
             <span className={TYPOGRAPHY.small}>({formatFileSize(fileSize)})</span>
           )}
+        </div>
+      )}
+
+      {!previewData && isLoading && (
+        <div className="flex items-center gap-2 rounded-md border px-3 py-2">
+          <div className="size-4 animate-spin rounded-full border-2 border-primary border-t-transparent" />
+          <span className={TYPOGRAPHY.small}>プレビュー情報を取得中...</span>
         </div>
       )}
 

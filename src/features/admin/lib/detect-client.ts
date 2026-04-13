@@ -13,10 +13,15 @@ function classifyScenario(scenarioKey: string): ScenarioKind {
 
 function normalizePeriod(value: unknown): string | null {
   if (value instanceof Date) {
-    // SheetJS は UTC midnight で Date を作るため UTC メソッドで読む
     const y = value.getUTCFullYear()
     const m = String(value.getUTCMonth() + 1).padStart(2, "0")
     return `${y}-${m}`
+  }
+  if (typeof value === "number" && Number.isFinite(value)) {
+    const parsed = XLSX.SSF.parse_date_code(value)
+    if (parsed?.y != null && parsed?.m != null) {
+      return `${parsed.y}-${String(parsed.m).padStart(2, "0")}`
+    }
   }
   const str = String(value ?? "").trim()
   const match = str.match(/^(\d{4})[/-](\d{1,2})/)
@@ -40,53 +45,75 @@ export function detectScenariosFromBase64(base64: string): DetectedScenario[] {
   const rows = XLSX.utils.sheet_to_json<unknown[]>(sheet, { header: 1 })
   if (rows.length <= 1) return []
 
-  // col 0 = シナリオ, col 1 = 年月
   type ScenarioGroup = {
     kind: ScenarioKind
+    scenarioKey: string
     months: string[]
     monthSet: Set<string>
     rowCount: number
   }
+
   const grouped = new Map<string, ScenarioGroup>()
+  let latestActualMonth: string | null = null
 
   for (let i = 1; i < rows.length; i++) {
     const row = rows[i] as unknown[]
     const scenarioKey = String(row?.[0] ?? "").trim()
     if (!scenarioKey) continue
+
     const yearMonth = normalizePeriod(row?.[1])
     if (!yearMonth) continue
 
     const kind = classifyScenario(scenarioKey)
     if (!grouped.has(scenarioKey)) {
-      grouped.set(scenarioKey, { kind, months: [], monthSet: new Set(), rowCount: 0 })
+      grouped.set(scenarioKey, {
+        kind,
+        scenarioKey,
+        months: [],
+        monthSet: new Set(),
+        rowCount: 0,
+      })
     }
-    const g = grouped.get(scenarioKey)!
-    if (!g.monthSet.has(yearMonth)) {
-      g.monthSet.add(yearMonth)
-      g.months.push(yearMonth)
+
+    const group = grouped.get(scenarioKey)!
+    if (!group.monthSet.has(yearMonth)) {
+      group.monthSet.add(yearMonth)
+      group.months.push(yearMonth)
     }
-    g.rowCount++
+    group.rowCount++
+
+    if (kind === "actual" && (latestActualMonth === null || yearMonth > latestActualMonth)) {
+      latestActualMonth = yearMonth
+    }
   }
 
-  const results: DetectedScenario[] = []
-  for (const [, g] of grouped) {
-    g.months.sort()
-    const latestMonth = g.months[g.months.length - 1] ?? null
+  return [...grouped.values()]
+    .map((group) => {
+      group.months.sort()
 
-    // targetMonth = そのシナリオの最新月（実績・見込どちらも同じ基準）
-    const targetMonth = latestMonth ?? ""
+      const firstMonth = group.months[0] ?? ""
+      const lastMonth = group.months[group.months.length - 1] ?? ""
 
-    results.push({
-      kind: g.kind,
-      targetMonth,
-      monthCount: g.months.length,
-      rowCount: g.rowCount,
+      return {
+        kind: group.kind,
+        scenarioKey: group.scenarioKey,
+        targetMonth: group.kind === "forecast" ? latestActualMonth ?? lastMonth : lastMonth,
+        monthCount: group.months.length,
+        rowCount: group.rowCount,
+        firstMonth,
+        lastMonth,
+        forecastStart: group.kind === "forecast"
+          ? group.months.find((month) => latestActualMonth === null || month > latestActualMonth) ?? firstMonth
+          : undefined,
+      }
     })
-  }
+    .sort((a, b) => {
+      const kindDiff = KIND_ORDER[a.kind] - KIND_ORDER[b.kind]
+      if (kindDiff !== 0) return kindDiff
 
-  return results.sort((a, b) => {
-    const kd = KIND_ORDER[a.kind] - KIND_ORDER[b.kind]
-    if (kd !== 0) return kd
-    return a.targetMonth < b.targetMonth ? -1 : a.targetMonth > b.targetMonth ? 1 : 0
-  })
+      const scenarioDiff = (a.scenarioKey ?? "").localeCompare(b.scenarioKey ?? "", "ja")
+      if (scenarioDiff !== 0) return scenarioDiff
+
+      return a.targetMonth < b.targetMonth ? -1 : a.targetMonth > b.targetMonth ? 1 : 0
+    })
 }

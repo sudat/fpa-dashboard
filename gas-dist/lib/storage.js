@@ -11,7 +11,26 @@ var Storage = Storage || {};
  */
 Storage.getFolderId = function () {
   var id = PropertiesService.getScriptProperties().getProperty('UPLOAD_FOLDER_ID');
-  return id || 'YOUR_FOLDER_ID';
+  return id || '';
+};
+
+Storage.resolveArchiveFolder = function () {
+  var configuredId = Storage.getFolderId();
+  if (configuredId) {
+    try {
+      return DriveApp.getFolderById(configuredId);
+    } catch (error) {
+      Logger.log('UPLOAD_FOLDER_ID が不正なため、スプレッドシートと同じフォルダへフォールバックします: ' + error);
+    }
+  }
+
+  var spreadsheetFile = DriveApp.getFileById(SheetUtils.getSpreadsheet().getId());
+  var parents = spreadsheetFile.getParents();
+  if (parents.hasNext()) {
+    return parents.next();
+  }
+
+  return DriveApp.getRootFolder();
 };
 
 /**
@@ -21,8 +40,7 @@ Storage.getFolderId = function () {
  * @returns {{ fileId: string, driveUrl: string }}
  */
 Storage.archiveToDrive = function (fileName, blob) {
-  var folderId = Storage.getFolderId();
-  var folder = DriveApp.getFolderById(folderId);
+  var folder = Storage.resolveArchiveFolder();
 
   var timestamp = Utilities.formatDate(new Date(), 'Asia/Tokyo', 'yyyyMMdd_HHmmss');
   var archiveName = timestamp + '_' + fileName;

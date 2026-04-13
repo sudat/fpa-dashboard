@@ -36,6 +36,9 @@ export interface UploadPreview {
       targetMonth: string;
       monthCount: number;
       rowCount: number;
+      scenarioKey?: string;
+      firstMonth?: string;
+      lastMonth?: string;
       forecastStart?: string;
     }>;
   };
@@ -64,6 +67,8 @@ const currentUserSchema = z.object({
   name: z.string().min(1),
 });
 
+const yearMonthSchema = z.string().regex(/^\d{4}-\d{2}$/);
+
 const importDataRowSchema = z.object({
   scenarioKey: z.string().min(1),
   yearMonth: z.string().regex(/^\d{4}-\d{2}$/),
@@ -85,10 +90,13 @@ const analysisDataSchema = z.object({
 
 const detectedScenarioSchema = z.object({
   kind: z.string(),
-  targetMonth: z.string(),
+  targetMonth: yearMonthSchema,
   monthCount: z.number().int().positive(),
   rowCount: z.number().int().nonnegative(),
-  forecastStart: z.string().optional(),
+  scenarioKey: z.string().optional(),
+  firstMonth: yearMonthSchema.optional(),
+  lastMonth: yearMonthSchema.optional(),
+  forecastStart: yearMonthSchema.optional(),
 });
 
 const uploadPreviewSchema = z.object({
@@ -143,6 +151,25 @@ type GasRunner<T extends (...args: never[]) => unknown> = {
   (...args: Parameters<T>): void;
 };
 
+function toGasError(error: unknown): Error {
+  if (error instanceof Error) {
+    return error;
+  }
+
+  if (typeof error === "string" && error.trim().length > 0) {
+    return new GasClientError(error);
+  }
+
+  if (error && typeof error === "object" && "message" in error) {
+    const message = error.message;
+    if (typeof message === "string" && message.trim().length > 0) {
+      return new GasClientError(message);
+    }
+  }
+
+  return new GasClientError("GAS request failed");
+}
+
 function runGas<R>(fnName: string, ...args: unknown[]): Promise<R> {
   return new Promise((resolve, reject) => {
     const runner = window.google?.script?.run;
@@ -161,7 +188,7 @@ function runGas<R>(fnName: string, ...args: unknown[]): Promise<R> {
     // not on individual functions. Chain handlers on runner, then call the function by name.
     ((runner as unknown as GasRunnerWithHandlers)
       .withSuccessHandler((result) => resolve(result as R))
-      .withFailureHandler((error) => reject(error)) as unknown as Record<string, (...a: unknown[]) => void>
+      .withFailureHandler((error) => reject(toGasError(error))) as unknown as Record<string, (...a: unknown[]) => void>
     )[fnName](...args);
   });
 }
