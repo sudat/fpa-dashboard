@@ -3,7 +3,11 @@
   "started_at": "2026-04-13T04:50:53.636Z",
   "session_ids": [
     "ses_27ae26f05ffeS9e6wQClVzoPTC",
-    "ses_27ad0efa3ffeC8BzWsZJdTcutf"
+    "ses_27ad0efa3ffeC8BzWsZJdTcutf",
+    "ses_27ac72d09ffeahDTjyh6T4oQzx",
+    "ses_27ac72bf2ffeMEmKkHYynR8xHT",
+    "ses_27ac72f1fffeMnWC8rcwmZBFo9",
+    "ses_27ac72e08ffeGpgbVypR0z7hAD"
   ],
   "plan_name": "remove-comment-ui",
   "agent": "atlas",
@@ -16,6 +20,14 @@
       "agent": "Sisyphus-Junior",
       "category": "quick",
       "updated_at": "2026-04-13T04:55:13.885Z"
+    },
+    "final-wave:f1": {
+      "task_key": "final-wave:f1",
+      "task_label": "F1",
+      "task_title": "**Plan Compliance Audit** — `oracle`",
+      "session_id": "ses_27ac72f1fffeMnWC8rcwmZBFo9",
+      "agent": "oracle",
+      "updated_at": "2026-04-13T05:05:46.440Z"
     }
   }
 }

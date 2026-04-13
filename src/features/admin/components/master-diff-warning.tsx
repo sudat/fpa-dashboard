@@ -1,9 +1,3 @@
-import {
-  Card,
-  CardContent,
-  CardHeader,
-  CardTitle,
-} from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
 import { TYPOGRAPHY } from "@/lib/ui/theme"
 import type { MasterDiffWarningItem } from "./admin-page"
@@ -19,34 +13,27 @@ const TYPE_CONFIG = {
 } as const
 
 export function MasterDiffWarning({ warnings }: MasterDiffWarningProps) {
+  if (warnings.length === 0) {
+    return <p className={TYPOGRAPHY.small}>警告はありません</p>
+  }
+
   return (
-    <Card>
-      <CardHeader>
-        <CardTitle>未マッピング警告</CardTitle>
-      </CardHeader>
-      <CardContent>
-        {warnings.length === 0 ? (
-          <p className={TYPOGRAPHY.small}>警告はありません</p>
-        ) : (
-          <ul className="flex flex-col gap-2">
-            {warnings.map((warning) => {
-              const typeConf = TYPE_CONFIG[warning.type]
-              return (
-                <li
-                  key={warning.id}
-                  className="flex items-center gap-3 rounded-none border px-3 py-2"
-                >
-                  <Badge variant="outline" className={typeConf.className}>
-                    {typeConf.label}
-                  </Badge>
-                  <span className={TYPOGRAPHY.body}>{warning.code}</span>
-                  <span className={TYPOGRAPHY.body}>{warning.name}</span>
-                </li>
-              )
-            })}
-          </ul>
-        )}
-      </CardContent>
-    </Card>
+    <ul className="flex flex-col gap-2 px-4">
+      {warnings.map((warning) => {
+        const typeConf = TYPE_CONFIG[warning.type]
+        return (
+          <li
+            key={warning.id}
+            className="flex items-center gap-3 rounded-none border px-3 py-2"
+          >
+            <Badge variant="outline" className={typeConf.className}>
+              {typeConf.label}
+            </Badge>
+            <span className={TYPOGRAPHY.body}>{warning.code}</span>
+            <span className={TYPOGRAPHY.body}>{warning.name}</span>
+          </li>
+        )
+      })}
+    </ul>
   )
 }
