@@ -31,6 +31,13 @@ export interface UploadPreview {
     rawRowCount: number;
     departments: string[];
     accounts: string[];
+    detectedScenarios?: Array<{
+      kind: string;
+      targetMonth: string;
+      monthCount: number;
+      rowCount: number;
+      forecastStart?: string;
+    }>;
   };
   replacementWarning: ReplacementWarning | null;
 }
@@ -76,11 +83,20 @@ const analysisDataSchema = z.object({
   departmentMaster: z.array(departmentMasterEntrySchema),
 });
 
+const detectedScenarioSchema = z.object({
+  kind: z.string(),
+  targetMonth: z.string(),
+  monthCount: z.number().int().positive(),
+  rowCount: z.number().int().nonnegative(),
+  forecastStart: z.string().optional(),
+});
+
 const uploadPreviewSchema = z.object({
   preview: z.object({
     rawRowCount: z.number().int().nonnegative(),
     departments: z.array(z.string()),
     accounts: z.array(z.string()),
+    detectedScenarios: z.array(detectedScenarioSchema).optional(),
   }),
   replacementWarning: replacementWarningSchema.nullable(),
 });

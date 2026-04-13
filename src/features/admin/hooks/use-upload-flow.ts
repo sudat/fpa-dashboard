@@ -46,17 +46,17 @@ const INITIAL_STATE: UploadState = {
   errorMessage: null,
 }
 
-function mockPreviewUpload(_base64: string, _input: ScenarioInput): UploadPreview & { detectedScenarios?: DetectedScenario[] } {
+function mockPreviewUpload(_base64: string, _input: ScenarioInput): UploadPreview {
   return {
     preview: {
       rawRowCount: 42,
       departments: ["全社", "SaaS事業部"],
       accounts: ["売上高", "売上原価", "販管費"],
+      detectedScenarios: [
+        { kind: "actual", targetMonth: "2026-01", monthCount: 12, rowCount: 42 },
+      ],
     },
     replacementWarning: null,
-    detectedScenarios: [
-      { kind: "actual", targetMonth: "2026-01", monthCount: 12, rowCount: 42 },
-    ],
   }
 }
 
@@ -98,8 +98,9 @@ function buildDefaultScenarioInput(): ScenarioInput {
 
 function extractDetectedScenarios(result: unknown): DetectedScenario[] | null {
   const obj = result as Record<string, unknown>
-  if (Array.isArray(obj?.detectedScenarios)) {
-    return obj.detectedScenarios as DetectedScenario[]
+  const preview = obj?.preview as Record<string, unknown> | undefined
+  if (Array.isArray(preview?.detectedScenarios)) {
+    return preview.detectedScenarios as DetectedScenario[]
   }
   return null
 }
