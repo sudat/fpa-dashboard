@@ -104,7 +104,7 @@ export function AggregateGroup({
           <span className="w-4 shrink-0" />
         )}
 
-        <span className={cn(TYPOGRAPHY.sectionHeader, "w-[200px] text-left")}>
+        <span className={cn(TYPOGRAPHY.sectionHeader, "w-[240px] text-left")}>
           {aggregateName}
           {isUnassigned && (
             <Badge variant="outline" className="ml-2 align-middle">
@@ -113,16 +113,16 @@ export function AggregateGroup({
           )}
         </span>
 
-        <span className={cn(TYPOGRAPHY.financial, "w-[120px] text-right")}>
+        <span className={cn(TYPOGRAPHY.financial, "w-[130px] text-right")}>
           <FinancialCell value={formatCurrency(summaryRow.B)} />
         </span>
-        <span className={cn(TYPOGRAPHY.financial, "w-[100px] text-right")}>
+        <span className={cn(TYPOGRAPHY.financial, "w-[110px] text-right")}>
           <DeltaValue value={summaryRow.BA} />
         </span>
-        <span className={cn(TYPOGRAPHY.financial, "w-[120px] text-right")}>
+        <span className={cn(TYPOGRAPHY.financial, "w-[130px] text-right")}>
           <FinancialCell value={formatCurrency(summaryRow.C)} />
         </span>
-        <span className={cn(TYPOGRAPHY.financial, "w-[100px] text-right")}>
+        <span className={cn(TYPOGRAPHY.financial, "w-[110px] text-right")}>
           <DeltaValue value={summaryRow.BC} />
         </span>
       </button>
@@ -131,11 +131,11 @@ export function AggregateGroup({
         <table className="w-full border-collapse text-sm">
           <colgroup>
             <col />
-            <col className="w-[120px]" />
-            <col className="w-[120px]" />
-            <col className="w-[100px]" />
-            <col className="w-[120px]" />
-            <col className="w-[100px]" />
+            <col className="w-[130px]" />
+            <col className="w-[130px]" />
+            <col className="w-[110px]" />
+            <col className="w-[130px]" />
+            <col className="w-[110px]" />
           </colgroup>
           <tbody>
             {detailRows.map((row) => {
@@ -151,22 +151,22 @@ export function AggregateGroup({
                     isHighlighted && "bg-accent/50",
                   )}
                 >
-                  <td className="min-w-[200px] px-3 pl-10">
+                  <td className="min-w-[240px] px-3 pl-10">
                     <span className="text-sm">{row.accountName}</span>
                   </td>
-                  <td className="px-3 w-[120px] text-right">
+                  <td className="px-3 w-[130px] text-right">
                     <FinancialCell value={formatCurrency(row.A)} />
                   </td>
-                  <td className="px-3 w-[120px] text-right">
+                  <td className="px-3 w-[130px] text-right">
                     <FinancialCell value={formatCurrency(row.B)} />
                   </td>
-                  <td className="px-3 w-[100px] text-right">
+                  <td className="px-3 w-[110px] text-right">
                     <DeltaValue value={row.BA} />
                   </td>
-                  <td className="px-3 w-[120px] text-right">
+                  <td className="px-3 w-[130px] text-right">
                     <FinancialCell value={formatCurrency(row.C)} />
                   </td>
-                  <td className="px-3 w-[100px] text-right">
+                  <td className="px-3 w-[110px] text-right">
                     <DeltaValue value={row.BC} />
                   </td>
                 </tr>

@@ -10,7 +10,7 @@ interface TimeAxisPillsProps {
 
 export function TimeAxisPills({ activeTimeAxis, onTimeAxisChange }: TimeAxisPillsProps) {
   return (
-    <div className="flex flex-wrap gap-1" role="group" aria-label="期間軸">
+    <div className="flex flex-wrap gap-2" role="group" aria-label="期間軸">
       {TIME_AXES.map((axis) => {
         const isActive = activeTimeAxis === axis
 
@@ -20,7 +20,7 @@ export function TimeAxisPills({ activeTimeAxis, onTimeAxisChange }: TimeAxisPill
             type="button"
             variant={isActive ? "secondary" : "ghost"}
             size="sm"
-            className="rounded-md px-3"
+            className="rounded-md px-3.5"
             aria-pressed={isActive}
             onClick={() => onTimeAxisChange(axis)}
           >

@@ -37,7 +37,7 @@ export function MasterSaveBar({
           </Badge>
         )}
         {excludedCount > 0 && (
-          <span className="text-xs text-muted-foreground">
+          <span className="text-sm text-muted-foreground">
             集計不要: {excludedCount}件
           </span>
         )}

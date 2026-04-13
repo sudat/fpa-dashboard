@@ -36,8 +36,8 @@ export function AnalysisHeader({
   onTimeAxisChange,
 }: AnalysisHeaderProps) {
   return (
-    <div className="space-y-2 border-b px-4 py-3">
-      <div className="flex items-center gap-2">
+    <div className="space-y-3 border-b px-5 py-3">
+      <div className="flex items-center gap-3">
         <MonthPicker value={targetMonth} onChange={onTargetMonthChange} />
         <ScenarioSelect slot="A" value={selectedA} options={availableScenarios} onChange={onSelectedAChange} />
         <ScenarioSelect slot="B" value={selectedB} options={availableScenarios} onChange={onSelectedBChange} />
