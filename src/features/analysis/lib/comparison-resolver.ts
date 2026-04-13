@@ -1,6 +1,6 @@
 import { type ComparisonSet, generateComparisonData } from "@/features/admin/lib/normalize-loglass"
 import { resolveABC } from "@/lib/domain/scenario-label"
-import type { ScenarioFamily, UploadMetadata } from "@/lib/domain/upload-contract"
+import type { ABCResolution, ScenarioFamily, UploadMetadata } from "@/lib/domain/upload-contract"
 import { normalizeYearMonth } from "@/lib/loglass/schema"
 import type { LoglassNormalizedRow, LoglassPeriodType } from "@/lib/loglass/types"
 
@@ -20,13 +20,14 @@ export function resolveComparisonData(
   normalizedRows: LoglassNormalizedRow[],
   targetMonth: string,
   uploadHistory: UploadMetadata[],
+  abcOverride?: ABCResolution,
 ): ComparisonSet[] {
   if (normalizedRows.length === 0) {
     return []
   }
 
   const dedupedHistory = dedupeUploadHistory(uploadHistory)
-  const resolution = resolveABC(dedupedHistory)
+  const resolution = abcOverride ?? resolveABC(dedupedHistory)
 
   if (!resolution.B) {
     return generateComparisonData(normalizedRows, targetMonth)
