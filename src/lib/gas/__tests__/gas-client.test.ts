@@ -1,32 +1,13 @@
-import { describe, expect, it, vi, beforeEach, type Mock } from "vitest";
+import { describe, expect, it, vi, beforeEach } from "vitest";
 
-// Mock window.google.script.run before importing gas-client
+// Mock window.google.script.run to reflect the real GAS API:
+// - withSuccessHandler and withFailureHandler live on google.script.run itself
+// - After chaining handlers, server functions are callable by name
+//   e.g. runner.withSuccessHandler(cb).withFailureHandler(cb).fnName(...args)
+
 const mockSuccessHandlers: Record<string, (result: unknown) => void> = {};
 const mockFailureHandlers: Record<string, (error: Error) => void> = {};
 const mockCalls: Record<string, unknown[][]> = {};
-
-function createMockRunner(fnName: string) {
-  const mockFn = (...args: unknown[]) => {
-    if (!mockCalls[fnName]) mockCalls[fnName] = [];
-    mockCalls[fnName].push(args);
-  };
-
-  (mockFn as unknown as Record<string, unknown>).withSuccessHandler = vi.fn(
-    (cb: (result: unknown) => void) => {
-      mockSuccessHandlers[fnName] = cb;
-      return mockFn;
-    },
-  );
-
-  (mockFn as unknown as Record<string, unknown>).withFailureHandler = vi.fn(
-    (cb: (error: Error) => void) => {
-      mockFailureHandlers[fnName] = cb;
-      return mockFn;
-    },
-  );
-
-  return mockFn;
-}
 
 function resetMocks() {
   Object.keys(mockSuccessHandlers).forEach((k) => delete mockSuccessHandlers[k]);
@@ -34,34 +15,61 @@ function resetMocks() {
   Object.keys(mockCalls).forEach((k) => delete mockCalls[k]);
 }
 
-const mockCurrentUser = createMockRunner("getCurrentUser");
-const mockPreviewUpload = createMockRunner("previewUpload");
-const mockCommitUpload = createMockRunner("commitUpload");
-const mockGetUploadHistory = createMockRunner("getUploadHistory");
-const mockGetAccountMaster = createMockRunner("getAccountMaster");
-const mockSaveAccountMaster = createMockRunner("saveAccountMaster");
-const mockGetDepartmentMaster = createMockRunner("getDepartmentMaster");
-const mockSaveDepartmentMaster = createMockRunner("saveDepartmentMaster");
-const mockGetAnalysisData = createMockRunner("getAnalysisData");
+// Build a chainable runner that captures handlers and records calls per function name
+function createMockRun() {
+  let pendingSuccessHandler: ((result: unknown) => void) | null = null;
+  let pendingFailureHandler: ((error: Error) => void) | null = null;
+
+  // Proxy that becomes callable per function name after chaining
+  function makeChained(): Record<string, unknown> {
+    return new Proxy(
+      {},
+      {
+        get(_target, prop: string) {
+          if (prop === "withSuccessHandler") {
+            return vi.fn((cb: (result: unknown) => void) => {
+              pendingSuccessHandler = cb;
+              return makeChained();
+            });
+          }
+          if (prop === "withFailureHandler") {
+            return vi.fn((cb: (error: Error) => void) => {
+              pendingFailureHandler = cb;
+              return makeChained();
+            });
+          }
+          // Any other property is treated as a server function call
+          return vi.fn((...args: unknown[]) => {
+            if (!mockCalls[prop]) mockCalls[prop] = [];
+            mockCalls[prop].push(args);
+            // Capture the handlers at time of call so tests can trigger them by function name
+            const sc = pendingSuccessHandler;
+            const fc = pendingFailureHandler;
+            if (sc) mockSuccessHandlers[prop] = sc;
+            if (fc) mockFailureHandlers[prop] = fc;
+            pendingSuccessHandler = null;
+            pendingFailureHandler = null;
+          });
+        },
+      },
+    );
+  }
+
+  const run = makeChained() as Record<string, unknown>;
+  return run;
+}
+
+let mockRun: Record<string, unknown>;
 
 beforeEach(() => {
   resetMocks();
+  mockRun = createMockRun();
 
   Object.defineProperty(globalThis, "window", {
     value: {
       google: {
         script: {
-          run: {
-            getCurrentUser: mockCurrentUser,
-            previewUpload: mockPreviewUpload,
-            commitUpload: mockCommitUpload,
-            getUploadHistory: mockGetUploadHistory,
-            getAccountMaster: mockGetAccountMaster,
-            saveAccountMaster: mockSaveAccountMaster,
-            getDepartmentMaster: mockGetDepartmentMaster,
-            saveDepartmentMaster: mockSaveDepartmentMaster,
-            getAnalysisData: mockGetAnalysisData,
-          },
+          run: mockRun,
         },
       },
     },

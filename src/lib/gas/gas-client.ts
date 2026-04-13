@@ -93,7 +93,7 @@ declare global {
   interface Window {
     google?: {
       script?: {
-        run?: {
+        run?: GasRunnerWithHandlers & {
           getCurrentUser: GasRunner<() => CurrentUser>;
           previewUpload: GasRunner<(workbookDataBase64: string, scenarioInput: ScenarioInput) => UploadPreview>;
           commitUpload: GasRunner<(workbookDataBase64: string, scenarioInput: ScenarioInput, confirmedReplacement: ReplacementWarning | null) => UploadMetadata>;
@@ -109,9 +109,21 @@ declare global {
   }
 }
 
+// GAS API: withSuccessHandler and withFailureHandler live on google.script.run itself,
+// not on individual server functions. After chaining handlers, the resulting object
+// exposes all server functions as plain callables.
+// Correct usage: runner.withSuccessHandler(cb).withFailureHandler(cb).fnName(...args)
+interface GasRunnerWithHandlers {
+  withSuccessHandler(callback: (result: unknown) => void): GasRunnerBase;
+  withFailureHandler(callback: (error: Error) => void): GasRunnerBase;
+}
+
+// After chaining, all server function names become callable properties
+type GasRunnerBase = GasRunnerWithHandlers & Record<string, (...args: unknown[]) => void>;
+
 type GasRunner<T extends (...args: never[]) => unknown> = {
-  withSuccessHandler: (callback: (result: ReturnType<T>) => void) => GasRunner<T>;
-  withFailureHandler: (callback: (error: Error) => void) => GasRunner<T>;
+  withSuccessHandler: (callback: (result: ReturnType<T>) => void) => GasRunnerBase;
+  withFailureHandler: (callback: (error: Error) => void) => GasRunnerBase;
   (...args: Parameters<T>): void;
 };
 
@@ -123,18 +135,18 @@ function runGas<R>(fnName: string, ...args: unknown[]): Promise<R> {
       return;
     }
 
-    const gasFunction = (runner as Record<string, unknown>)[fnName];
+    const gasFunction = (runner as unknown as Record<string, unknown>)[fnName];
     if (typeof gasFunction !== "function") {
       reject(new GasClientError(`Function "${fnName}" not found on google.script.run`));
       return;
     }
 
-    const typedFn = gasFunction as unknown as GasRunner<(...args: unknown[]) => R>;
-
-    typedFn
-      .withSuccessHandler((result) => resolve(result))
-      .withFailureHandler((error) => reject(error))
-      (...args);
+    // GAS API: withSuccessHandler/withFailureHandler live on google.script.run itself,
+    // not on individual functions. Chain handlers on runner, then call the function by name.
+    ((runner as unknown as GasRunnerWithHandlers)
+      .withSuccessHandler((result) => resolve(result as R))
+      .withFailureHandler((error) => reject(error)) as unknown as Record<string, (...a: unknown[]) => void>
+    )[fnName](...args);
   });
 }
 
