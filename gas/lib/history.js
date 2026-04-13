@@ -18,12 +18,13 @@ var HISTORY_COLS = {
   FILE_NAME:       8,
   DRIVE_FILE_ID:   9,
   ROW_COUNT:      10,
+  SHEET_NAME:     11,
 };
 
 var HISTORY_HEADER = [
   'uploadId', 'timestamp', 'uploader', 'scenarioKind',
   'targetMonth', 'forecastStart', 'generatedLabel',
-  'scenarioFamily', 'fileName', 'driveFileId', 'rowCount',
+  'scenarioFamily', 'fileName', 'driveFileId', 'rowCount', 'sheetName',
 ];
 
 History.getSheetName = function () {
@@ -57,6 +58,7 @@ History.getUploadHistory = function () {
         scenarioFamily:     String(row[HISTORY_COLS.SCENARIO_FAMILY] || ''),
       },
       fileName:             String(row[HISTORY_COLS.FILE_NAME] || ''),
+      sheetName:            String(row[HISTORY_COLS.SHEET_NAME] || ''),
     };
   }).reverse();
 };
@@ -84,6 +86,7 @@ History.addUploadEntry = function (metadata) {
     metadata.fileName,
     metadata.driveFileId || '',
     metadata.rowCount || 0,
+    metadata.sheetName || '',
   ];
 
   sheet.appendRow(row);
