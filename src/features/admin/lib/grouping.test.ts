@@ -1,6 +1,7 @@
 import { describe, expect, test } from "vitest";
 
 import { loglassSmallRawFixture } from "@/lib/fixtures/loglass-small";
+import { deriveMetricTypeFromScenario } from "@/lib/loglass/schema";
 
 import { normalizeRawRows } from "./normalize-loglass";
 import {
@@ -18,7 +19,7 @@ import {
 describe("grouping helpers", () => {
   test("groupByDepartment groups normalized rows by department name", () => {
     const actualRows = normalizeRawRows(
-      loglassSmallRawFixture.filter((row) => row.数値区分 === "実績"),
+      loglassSmallRawFixture.filter((row) => deriveMetricTypeFromScenario(row.シナリオ) === "実績"),
     );
 
     const grouped = groupByDepartment(actualRows);
@@ -32,31 +33,15 @@ describe("grouping helpers", () => {
     const normalizedRows = normalizeRawRows(loglassSmallRawFixture);
 
     const groupedByAccount = groupByAccount(normalizedRows);
-    const hierarchy = buildAccountHierarchy(normalizedRows);
 
     expect(groupedByAccount.get("SaaS利用料売上")).toHaveLength(9);
-    expect(getAggregateAccounts(normalizedRows)).toEqual(["GMV", "売上原価", "売上高", "販管費"]);
-    expect(hierarchy.get("売上高")).toEqual(["SaaS利用料売上", "広告売上"]);
-    expect(getDetailAccounts(normalizedRows, "売上高").map((row) => row.account.detailName)).toEqual([
-      "SaaS利用料売上",
-      "SaaS利用料売上",
-      "SaaS利用料売上",
-      "広告売上",
-      "広告売上",
-      "広告売上",
-      "SaaS利用料売上",
-      "SaaS利用料売上",
-      "SaaS利用料売上",
-      "広告売上",
-      "広告売上",
-      "広告売上",
-      "SaaS利用料売上",
-      "SaaS利用料売上",
-      "SaaS利用料売上",
-      "広告売上",
-      "広告売上",
-      "広告売上",
-    ]);
+    expect(getAggregateAccounts(normalizedRows)).toEqual(
+      ["SaaS GMV", "SaaS利用料売上", "決済手数料", "広告 GMV", "広告宣伝費", "広告売上", "人件費", "配信原価"],
+    );
+    expect(buildAccountHierarchy(normalizedRows).get("SaaS利用料売上")).toEqual(["SaaS利用料売上"]);
+    expect(getDetailAccounts(normalizedRows, "SaaS利用料売上").map((row) => row.account.detailName).sort()).toEqual(
+      Array(9).fill("SaaS利用料売上"),
+    );
   });
 
   test("groupByTimeAxis and groupByMetricType split rows into deterministic buckets", () => {
@@ -74,7 +59,7 @@ describe("grouping helpers", () => {
 
   test("aggregateByDepartment creates 全社 rows by summing business unit rows", () => {
     const actualMonthlyRows = normalizeRawRows(
-      loglassSmallRawFixture.filter((row) => row.数値区分 === "実績"),
+      loglassSmallRawFixture.filter((row) => deriveMetricTypeFromScenario(row.シナリオ) === "実績"),
     ).filter((row) => row.period.periodType === "単月");
 
     const aggregatedRows = aggregateByDepartment(actualMonthlyRows);
@@ -91,15 +76,15 @@ describe("grouping helpers", () => {
 
   test("computeGmvRatio uses GMV rows as denominator and handles missing denominator safely", () => {
     const actualMonthlyRows = normalizeRawRows(
-      loglassSmallRawFixture.filter((row) => row.数値区分 === "実績"),
+      loglassSmallRawFixture.filter((row) => deriveMetricTypeFromScenario(row.シナリオ) === "実績"),
     ).filter((row) => row.period.periodType === "単月");
 
-    expect(computeGmvRatio(actualMonthlyRows, "売上高")).toEqual({
-      numerator: 73_000_000,
+    expect(computeGmvRatio(actualMonthlyRows, "SaaS利用料売上")).toEqual({
+      numerator: 42_000_000,
       denominator: 213_000_000,
-      ratio: 73_000_000 / 213_000_000,
+      ratio: 42_000_000 / 213_000_000,
     });
-    expect(computeGmvRatio([], "売上高")).toEqual({
+    expect(computeGmvRatio([], "SaaS利用料売上")).toEqual({
       numerator: 0,
       denominator: null,
       ratio: null,

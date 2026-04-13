@@ -8,7 +8,8 @@ import { applyMasterMapping } from "@/lib/domain/master-schema"
 import type { ScenarioFamily, UploadMetadata } from "@/lib/domain/upload-contract"
 import { loglassSmallRawFixture } from "@/lib/fixtures/loglass-small"
 import { gasClient, isGasAvailable, type AnalysisData } from "@/lib/gas/gas-client"
-import type { LoglassNormalizedRow, LoglassRawRow } from "@/lib/loglass/types"
+import { deriveMetricTypeFromScenario } from "@/lib/loglass/schema"
+import type { LoglassMetricType, LoglassNormalizedRow, LoglessRawRow } from "@/lib/loglass/types"
 
 const AGGREGATE_ACCOUNT_DEFINITIONS = [
   { code: "4000", name: "売上高", accountType: "収益" as const },
@@ -21,11 +22,32 @@ const AGGREGATE_ACCOUNT_DEFINITIONS = [
 const ANALYSIS_SCENARIO_FAMILIES: ScenarioFamily[] = ["actual", "budget", "forecast"]
 const UNASSIGNED_ACCOUNT_CODE = "UNASSIGNED"
 const UNASSIGNED_EXTERNAL_ACCOUNT_CODE = "EXT-UNASSIGNED"
+const ACCOUNT_AGGREGATE_MAP: Record<string, string> = {
+  "SaaS利用料売上": "売上高",
+  "広告売上": "売上高",
+  "EC売上": "売上高",
+  売上高: "売上高",
+  "SaaS GMV": "GMV",
+  "広告 GMV": "GMV",
+  "EC GMV": "GMV",
+  GMV: "GMV",
+  決済手数料: "売上原価",
+  配信原価: "売上原価",
+  配送原価: "売上原価",
+  売上原価: "売上原価",
+  人件費: "販管費",
+  広告宣伝費: "販管費",
+  業務委託費: "販管費",
+  採用費: "販管費",
+  "SaaS利用料": "販管費",
+  地代家賃: "販管費",
+  販管費: "販管費",
+}
 
 export const ANALYSIS_TARGET_MONTH = "2026-02"
 
 type AggregateBucket = {
-  baseRow: LoglassRawRow
+  baseRow: LoglessRawRow
   revenue: number
   cost: number
   sga: number
@@ -38,44 +60,48 @@ export interface UseAnalysisDataResult {
   error: Error | null
 }
 
-function buildAggregateRow(baseRow: LoglassRawRow, definition: (typeof AGGREGATE_ACCOUNT_DEFINITIONS)[number], amount: number): LoglassRawRow {
+function getAggregateCategory(accountName: string): string | undefined {
+  return ACCOUNT_AGGREGATE_MAP[accountName]
+}
+
+function buildAggregateRow(baseRow: LoglessRawRow, definition: (typeof AGGREGATE_ACCOUNT_DEFINITIONS)[number], amount: number): LoglessRawRow {
   return {
     ...baseRow,
     科目コード: definition.code,
     外部科目コード: `EXT-${definition.code}`,
-    科目名: definition.name,
-    集計科目名: definition.name,
-    明細科目名: definition.name,
+    科目: definition.name,
     科目タイプ: definition.accountType,
     金額: amount,
   }
 }
 
-export function buildAnalysisFixtureRawRows(): LoglassRawRow[] {
+export function buildAnalysisFixtureRawRows(): LoglessRawRow[] {
   return buildAggregateRawRows(loglassSmallRawFixture)
 }
 
-function buildAggregateRawRows(rawRows: LoglassRawRow[]): LoglassRawRow[] {
+function buildAggregateRawRows(rawRows: LoglessRawRow[]): LoglessRawRow[] {
   const aggregateBuckets = new Map<string, AggregateBucket>()
 
   rawRows.forEach((row) => {
-    const bucketKey = [row.部署コード, row.年月度, row.数値区分, row.シナリオ].join("::")
+    const metricType = deriveMetricTypeFromScenario(row.シナリオ)
+    const bucketKey = [row.部署コード, row.年月度, metricType, row.シナリオ].join("::")
     const bucket = aggregateBuckets.get(bucketKey) ?? {
       baseRow: row,
       revenue: 0,
       cost: 0,
       sga: 0,
     }
+    const category = getAggregateCategory(row.科目)
 
-    if (row.集計科目名 === "売上高") {
+    if (category === "売上高") {
       bucket.revenue += row.金額
     }
 
-    if (row.集計科目名 === "売上原価") {
+    if (category === "売上原価") {
       bucket.cost += row.金額
     }
 
-    if (row.集計科目名 === "販管費") {
+    if (category === "販管費") {
       bucket.sga += row.金額
     }
 
@@ -99,7 +125,7 @@ function buildAggregateRawRows(rawRows: LoglassRawRow[]): LoglassRawRow[] {
 }
 
 function buildAnalysisData(
-  rawRows: LoglassRawRow[],
+  rawRows: LoglessRawRow[],
   targetMonth: string,
   uploadHistory?: UploadMetadata[],
 ): Pick<UseAnalysisDataResult, "normalizedData" | "comparisonData"> {
@@ -114,7 +140,7 @@ function buildAnalysisData(
   }
 }
 
-function toMetricType(scenarioFamily: ScenarioFamily): LoglassRawRow["数値区分"] {
+function toMetricType(scenarioFamily: ScenarioFamily): LoglassMetricType {
   switch (scenarioFamily) {
     case "actual":
       return "実績"
@@ -125,7 +151,7 @@ function toMetricType(scenarioFamily: ScenarioFamily): LoglassRawRow["数値区�
   }
 }
 
-function toRawRowsFromAnalysisData(analysisDataByFamily: AnalysisData[], targetMonth: string): LoglassRawRow[] {
+function toRawRowsFromAnalysisData(analysisDataByFamily: AnalysisData[], targetMonth: string): LoglessRawRow[] {
   const masterSource = analysisDataByFamily.find((item) => item.accountMaster.length > 0 || item.departmentMaster.length > 0)
 
   if (!masterSource) {
@@ -134,44 +160,43 @@ function toRawRowsFromAnalysisData(analysisDataByFamily: AnalysisData[], targetM
 
   return analysisDataByFamily.flatMap((analysisData, index) => {
     const scenarioFamily = ANALYSIS_SCENARIO_FAMILIES[index]
-    const metricType = toMetricType(scenarioFamily)
+    const expectedMetricType = toMetricType(scenarioFamily)
 
     const mappedRows = applyBucketFilter(applyMasterMapping(
       analysisData.importData.map((row) => ({
         ...row,
-        部署名: row.deptName,
-        明細科目名: row.accountName,
+        部署: row.deptName,
+        科目: row.accountName,
       })),
       masterSource.accountMaster,
       masterSource.departmentMaster,
     ))
 
     return mappedRows.map((mappedRow) => {
-      const [yearRaw, monthRaw] = mappedRow.yearMonth.split("-")
       const isUnassignedAccount = mappedRow.accountMapping.bucketStatus === "unassigned"
+      const scenarioKey = mappedRow.scenarioKey
+
+      if (deriveMetricTypeFromScenario(scenarioKey) !== expectedMetricType) {
+        throw new Error(`シナリオ種別の対応が不正です: ${scenarioKey}`)
+      }
 
       return {
-        対象年度: Number(yearRaw),
-        対象月: Number(monthRaw),
-        シナリオ: mappedRow.scenarioKey,
-        数値区分: metricType,
+        シナリオ: scenarioKey,
         年月度: mappedRow.yearMonth || targetMonth,
-        部署コード: mappedRow.deptCode,
-        外部部署コード: mappedRow.extDeptCode,
-        部署名: mappedRow.departmentMapping.businessUnitName,
         科目コード: isUnassignedAccount ? UNASSIGNED_ACCOUNT_CODE : mappedRow.accountCode,
         外部科目コード: isUnassignedAccount ? UNASSIGNED_EXTERNAL_ACCOUNT_CODE : mappedRow.extAccountCode,
-        科目名: mappedRow.accountMapping.detailAccountName,
-        集計科目名: mappedRow.accountMapping.aggregateAccountName,
-        明細科目名: mappedRow.accountMapping.detailAccountName,
-        科目タイプ: mappedRow.accountType as LoglassRawRow["科目タイプ"],
+        科目: mappedRow.accountMapping.aggregateAccountName,
+        科目タイプ: mappedRow.accountType as LoglessRawRow["科目タイプ"],
+        部署コード: mappedRow.deptCode,
+        外部部署コード: mappedRow.extDeptCode,
+        部署: mappedRow.departmentMapping.businessUnitName,
         金額: mappedRow.amount,
-      } satisfies LoglassRawRow
+      } satisfies LoglessRawRow
     })
   })
 }
 
-async function loadPersistedRawRows(targetMonth: string): Promise<LoglassRawRow[]> {
+async function loadPersistedRawRows(targetMonth: string): Promise<LoglessRawRow[]> {
   const analysisDataByFamily = await Promise.all(
     ANALYSIS_SCENARIO_FAMILIES.map((scenarioFamily) => gasClient.getAnalysisData(scenarioFamily, targetMonth)),
   )
@@ -180,7 +205,7 @@ async function loadPersistedRawRows(targetMonth: string): Promise<LoglassRawRow[
 }
 
 async function loadPersistedAnalysisSource(targetMonth: string): Promise<{
-  rawRows: LoglassRawRow[]
+  rawRows: LoglessRawRow[]
   uploadHistory: UploadMetadata[]
 }> {
   const [rawRows, uploadHistory] = await Promise.all([

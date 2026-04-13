@@ -1,10 +1,11 @@
 import {
   buildNormalizedRowKey,
   createNormalizedPeriod,
+  deriveMetricTypeFromScenario,
   loglassNormalizedRowArraySchema,
   loglassRawRowArraySchema,
 } from "../loglass/schema";
-import type { LoglassNormalizedRow, LoglassRawRow } from "../loglass/types";
+import type { LoglassNormalizedRow, LoglessRawRow } from "../loglass/types";
 
 const departments = [
   ["D001", "EXT-D001", "SaaS事業部"],
@@ -73,30 +74,22 @@ function amountFor(indices: {
   return Math.round(base * departmentFactor * monthFactor * scenarioFactor);
 }
 
-function createLargeRawFixture(): LoglassRawRow[] {
-  const rows: LoglassRawRow[] = [];
+function createLargeRawFixture(): LoglessRawRow[] {
+  const rows: LoglessRawRow[] = [];
 
   months.forEach((yearMonth, monthIndex) => {
-    const [yearRaw, monthRaw] = yearMonth.split("-");
-    const fiscalYear = Number(monthRaw) <= 3 ? Number(yearRaw) : Number(yearRaw) + 1;
-
     departments.forEach(([departmentCode, externalDepartmentCode, departmentName], departmentIndex) => {
-      accounts.forEach(([accountCode, externalAccountCode, aggregateName, detailName, accountType], accountIndex) => {
-        scenarios.forEach(([scenario, metricType], scenarioIndex) => {
+      accounts.forEach(([accountCode, externalAccountCode, _aggregateName, detailName, accountType], accountIndex) => {
+        scenarios.forEach(([scenario], scenarioIndex) => {
           rows.push({
-            対象年度: fiscalYear,
-            対象月: Number(monthRaw),
             シナリオ: scenario,
-            数値区分: metricType,
             年月度: yearMonth,
             部署コード: departmentCode,
             外部部署コード: externalDepartmentCode,
-            部署名: departmentName,
+            部署: departmentName,
             科目コード: accountCode,
             外部科目コード: externalAccountCode,
-            科目名: detailName,
-            集計科目名: aggregateName,
-            明細科目名: detailName,
+            科目: detailName,
             科目タイプ: accountType,
             金額: amountFor({
               monthIndex,
@@ -113,11 +106,12 @@ function createLargeRawFixture(): LoglassRawRow[] {
   return rows;
 }
 
-function createLargeNormalizedFixture(rows: LoglassRawRow[]): LoglassNormalizedRow[] {
+function createLargeNormalizedFixture(rows: LoglessRawRow[]): LoglassNormalizedRow[] {
   return rows.map((raw, index) => {
     const periodType = periodTypes[index % periodTypes.length];
     const isAllCompanyRow = index % 19 === 0;
-    const scenarioKey = raw.数値区分 === "実績" ? undefined : raw.シナリオ;
+    const metricType = deriveMetricTypeFromScenario(raw.シナリオ);
+    const scenarioKey = metricType === "実績" ? undefined : raw.シナリオ;
     const departmentCode = isAllCompanyRow ? "ALL" : raw.部署コード;
 
     return {
@@ -126,28 +120,28 @@ function createLargeNormalizedFixture(rows: LoglassRawRow[]): LoglassNormalizedR
         accountCode: raw.科目コード,
         yearMonth: raw.年月度,
         periodType,
-        metricType: raw.数値区分,
+        metricType,
         scenarioKey,
       }),
       scenarioKey,
       department: {
         code: departmentCode,
         externalCode: isAllCompanyRow ? "" : raw.外部部署コード,
-        name: isAllCompanyRow ? "全社" : raw.部署名,
+        name: isAllCompanyRow ? "全社" : raw.部署,
         scope: isAllCompanyRow ? "全社" : "事業部",
       },
       account: {
         code: raw.科目コード,
         externalCode: raw.外部科目コード,
-        name: raw.科目名,
+        name: raw.科目,
         type: raw.科目タイプ,
-        aggregateName: raw.集計科目名,
-        detailName: raw.明細科目名,
-        hierarchyKey: `${raw.集計科目名}::${raw.明細科目名}`,
-        isGmvDenominator: raw.集計科目名 === "GMV",
+        aggregateName: raw.科目,
+        detailName: raw.科目,
+        hierarchyKey: `${raw.科目}::${raw.科目}`,
+        isGmvDenominator: raw.科目 === "SaaS GMV" || raw.科目 === "広告 GMV" || raw.科目 === "EC GMV",
       },
       period: createNormalizedPeriod(raw.年月度, periodType),
-      metricType: raw.数値区分,
+      metricType,
       amount: raw.金額,
     };
   });

@@ -1,15 +1,16 @@
 import {
   buildNormalizedRowKey,
   createNormalizedPeriod,
+  deriveMetricTypeFromScenario,
   loglassNormalizedRowArraySchema,
   loglassRawRowArraySchema,
   normalizeYearMonth,
 } from "@/lib/loglass/schema";
 import type {
+  LoglessRawRow,
   LoglassNormalizedRow,
   LoglassNormalizedRowList,
   LoglassPeriodType,
-  LoglassRawRow,
 } from "@/lib/loglass/types";
 
 export interface ComparisonSet {
@@ -39,12 +40,12 @@ type ComparisonAccumulator = {
   accountName: string;
 };
 
-export function normalizeLoglassData(rawRows: LoglassRawRow[]): LoglassNormalizedRowList {
+export function normalizeLoglassData(rawRows: LoglessRawRow[]): LoglassNormalizedRowList {
   const parsedRows = loglassRawRowArraySchema.parse(rawRows);
   return loglassNormalizedRowArraySchema.parse(normalizeRawRows(parsedRows));
 }
 
-export function normalizeRawRows(rawRows: LoglassRawRow[]): LoglassNormalizedRow[] {
+export function normalizeRawRows(rawRows: LoglessRawRow[]): LoglassNormalizedRow[] {
   const parsedRows = loglassRawRowArraySchema.parse(rawRows);
 
   if (parsedRows.length === 0) {
@@ -54,7 +55,8 @@ export function normalizeRawRows(rawRows: LoglassRawRow[]): LoglassNormalizedRow
   const deduplicatedRows = new Map<string, LoglassNormalizedRow>();
 
   parsedRows.forEach((rawRow) => {
-    const scenarioKey = rawRow.数値区分 === "実績" ? undefined : rawRow.シナリオ.trim();
+    const metricType = deriveMetricTypeFromScenario(rawRow.シナリオ);
+    const scenarioKey = metricType === "実績" ? undefined : rawRow.シナリオ.trim();
 
     PERIOD_TYPES.forEach((periodType) => {
       const period = createNormalizedPeriod(rawRow.年月度, periodType);
@@ -63,7 +65,7 @@ export function normalizeRawRows(rawRows: LoglassRawRow[]): LoglassNormalizedRow
         accountCode: rawRow.科目コード,
         yearMonth: rawRow.年月度,
         periodType,
-        metricType: rawRow.数値区分,
+        metricType,
         scenarioKey,
       });
 
@@ -80,21 +82,21 @@ export function normalizeRawRows(rawRows: LoglassRawRow[]): LoglassNormalizedRow
         department: {
           code: rawRow.部署コード,
           externalCode: rawRow.外部部署コード,
-          name: rawRow.部署名,
+          name: rawRow.部署,
           scope: "事業部",
         },
         account: {
           code: rawRow.科目コード,
           externalCode: rawRow.外部科目コード,
-          name: rawRow.科目名,
+          name: rawRow.科目,
           type: rawRow.科目タイプ,
-          aggregateName: rawRow.集計科目名,
-          detailName: rawRow.明細科目名,
-          hierarchyKey: `${rawRow.集計科目名}::${rawRow.明細科目名}`,
-          isGmvDenominator: rawRow.集計科目名 === "GMV",
+          aggregateName: rawRow.科目,
+          detailName: rawRow.科目,
+          hierarchyKey: rawRow.科目,
+          isGmvDenominator: rawRow.科目 === "SaaS GMV" || rawRow.科目 === "広告 GMV",
         },
         period,
-        metricType: rawRow.数値区分,
+        metricType,
         amount: rawRow.金額,
       });
     });

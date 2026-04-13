@@ -27,23 +27,20 @@ export const prototypeLoglassCsvRowSchema = z.object({
   金額: z.coerce.number().finite(),
 });
 
-export const loglassRawRowSchema = z.object({
-  対象年度: z.number().int().min(2000).max(2100),
-  対象月: positiveMonth,
+export const loglessRawRowSchema = z.object({
   シナリオ: nonEmptyString,
-  数値区分: metricTypeSchema,
   年月度: z.string().regex(yearMonthPattern),
-  部署コード: nonEmptyString,
-  外部部署コード: z.string().trim().default(""),
-  部署名: nonEmptyString,
-  科目コード: nonEmptyString,
+  科目コード: z.string().trim(),
   外部科目コード: z.string().trim().default(""),
-  科目名: nonEmptyString,
-  集計科目名: nonEmptyString,
-  明細科目名: nonEmptyString,
+  科目: nonEmptyString,
   科目タイプ: accountTypeSchema,
+  部署コード: z.string().trim(),
+  外部部署コード: z.string().trim().default(""),
+  部署: nonEmptyString,
   金額: z.coerce.number().finite(),
 });
+
+export const loglassRawRowSchema = loglessRawRowSchema;
 
 export const normalizedPeriodSchema = z.object({
   fiscalYear: z.number().int().min(2000).max(2100),
@@ -80,13 +77,13 @@ export const loglassNormalizedRowSchema = z.object({
   amount: z.number().finite(),
 });
 
-export const loglassRawRowArraySchema = z.array(loglassRawRowSchema);
+export const loglassRawRowArraySchema = z.array(loglessRawRowSchema);
 export const loglassNormalizedRowArraySchema = z.array(loglassNormalizedRowSchema);
 
 type MetricType = z.infer<typeof metricTypeSchema>;
 type PeriodType = z.infer<typeof periodTypeSchema>;
 type PrototypeLoglassCsvRow = z.infer<typeof prototypeLoglassCsvRowSchema>;
-type LoglassRawRow = z.infer<typeof loglassRawRowSchema>;
+type LoglessRawRow = z.infer<typeof loglessRawRowSchema>;
 type LoglassNormalizedPeriod = z.infer<typeof normalizedPeriodSchema>;
 
 export function normalizeYearMonth(value: string | Date): string {
@@ -144,24 +141,19 @@ export function createNormalizedPeriod(
   });
 }
 
-export function normalizePrototypeCsvRow(row: PrototypeLoglassCsvRow): LoglassRawRow {
+export function normalizePrototypeCsvRow(row: PrototypeLoglassCsvRow): LoglessRawRow {
   const period = createNormalizedPeriod(row.年月, "単月");
 
-  return loglassRawRowSchema.parse({
-    対象年度: period.fiscalYear,
-    対象月: period.month,
+  return loglessRawRowSchema.parse({
     シナリオ: row["計画・実績"],
-    数値区分: deriveMetricTypeFromScenario(row["計画・実績"]),
     年月度: period.yearMonth,
-    部署コード: row.ログラス部署コード,
-    外部部署コード: row.外部システム部署コード,
-    部署名: row.部署,
     科目コード: row.ログラス科目コード,
     外部科目コード: row.外部システム科目コード,
-    科目名: row.科目,
-    集計科目名: row.科目,
-    明細科目名: row.科目,
+    科目: row.科目,
     科目タイプ: row.科目タイプ,
+    部署コード: row.ログラス部署コード,
+    外部部署コード: row.外部システム部署コード,
+    部署: row.部署,
     金額: row.金額,
   });
 }

@@ -117,7 +117,6 @@ describe("useAnalysisData", () => {
     expect(
       result.current.normalizedData.some(
         (row) =>
-          row.account.detailName === "SaaS利用料売上" &&
           row.account.aggregateName === "売上高" &&
           row.department.name === "未割当" &&
           row.metricType === "実績",

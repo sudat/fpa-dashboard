@@ -8,6 +8,7 @@ import type {
   loglassNormalizedRowSchema,
   loglassRawRowArraySchema,
   loglassRawRowSchema,
+  loglessRawRowSchema,
   metricTypeSchema,
   normalizedAccountSchema,
   normalizedDepartmentSchema,
@@ -18,6 +19,7 @@ import type {
 } from "./schema";
 
 export type PrototypeLoglassCsvRow = z.infer<typeof prototypeLoglassCsvRowSchema>;
+export type LoglessRawRow = z.infer<typeof loglessRawRowSchema>;
 export type LoglassRawRow = z.infer<typeof loglassRawRowSchema>;
 export type LoglassRawRowList = z.infer<typeof loglassRawRowArraySchema>;
 

@@ -1,7 +1,7 @@
 import { describe, expect, test } from "vitest";
 
 import { loglassSmallRawFixture } from "@/lib/fixtures/loglass-small";
-import type { LoglassRawRow } from "@/lib/loglass/types";
+import type { LoglessRawRow } from "@/lib/loglass/types";
 
 import {
   generateComparisonData,
@@ -9,21 +9,16 @@ import {
   normalizeRawRows,
 } from "./normalize-loglass";
 
-function createRawRow(overrides: Partial<LoglassRawRow> = {}): LoglassRawRow {
+function createRawRow(overrides: Partial<LoglessRawRow> = {}): LoglessRawRow {
   return {
-    対象年度: 2026,
-    対象月: 2,
     シナリオ: "実績",
-    数値区分: "実績",
     年月度: "2026-02",
     部署コード: "D001",
     外部部署コード: "EXT-D001",
-    部署名: "SaaS事業部",
+    部署: "SaaS事業部",
     科目コード: "4001",
     外部科目コード: "EXT-4001",
-    科目名: "SaaS利用料売上",
-    集計科目名: "売上高",
-    明細科目名: "SaaS利用料売上",
+    科目: "SaaS利用料売上",
     科目タイプ: "収益",
     金額: 0,
     ...overrides,
@@ -41,7 +36,7 @@ describe("normalize-loglass", () => {
       "YTD",
       "着地見込",
     ]);
-    expect(normalizedRows.every((row) => row.account.hierarchyKey === "GMV::SaaS GMV")).toBe(true);
+    expect(normalizedRows.every((row) => row.account.hierarchyKey === gmvRawRow.科目)).toBe(true);
     expect(normalizedRows.every((row) => row.account.isGmvDenominator)).toBe(true);
     expect(normalizedRows.every((row) => row.scenarioKey === undefined)).toBe(true);
   });
@@ -67,68 +62,51 @@ describe("normalize-loglass", () => {
   });
 
   test("generateComparisonData builds 単月/YTD/着地見込 A-B-C values from normalized rows", () => {
-    const rawRows: LoglassRawRow[] = [
-      createRawRow({ 年月度: "2025-04", 対象月: 4, 金額: 10 }),
-      createRawRow({ 年月度: "2025-05", 対象月: 5, 金額: 20 }),
-      createRawRow({ 年月度: "2026-01", 対象月: 1, 金額: 30 }),
-      createRawRow({ 年月度: "2026-02", 対象月: 2, 金額: 40 }),
-      createRawRow({ 年月度: "2024-04", 対象月: 4, 対象年度: 2025, 金額: 5 }),
-      createRawRow({ 年月度: "2024-05", 対象月: 5, 対象年度: 2025, 金額: 15 }),
-      createRawRow({ 年月度: "2025-01", 対象月: 1, 対象年度: 2025, 金額: 25 }),
-      createRawRow({ 年月度: "2025-02", 対象月: 2, 対象年度: 2025, 金額: 30 }),
-      createRawRow({ 年月度: "2025-03", 対象月: 3, 対象年度: 2025, 金額: 45 }),
+    const rawRows: LoglessRawRow[] = [
+      createRawRow({ 年月度: "2025-04", 金額: 10 }),
+      createRawRow({ 年月度: "2025-05", 金額: 20 }),
+      createRawRow({ 年月度: "2026-01", 金額: 30 }),
+      createRawRow({ 年月度: "2026-02", 金額: 40 }),
+      createRawRow({ 年月度: "2024-04", 金額: 5 }),
+      createRawRow({ 年月度: "2024-05", 金額: 15 }),
+      createRawRow({ 年月度: "2025-01", 金額: 25 }),
+      createRawRow({ 年月度: "2025-02", 金額: 30 }),
+      createRawRow({ 年月度: "2025-03", 金額: 45 }),
       createRawRow({
         年月度: "2025-04",
-        対象月: 4,
         シナリオ: "26年3月期着地見込0124時点",
-        数値区分: "見込",
         金額: 11,
       }),
       createRawRow({
         年月度: "2025-05",
-        対象月: 5,
         シナリオ: "26年3月期着地見込0124時点",
-        数値区分: "見込",
         金額: 21,
       }),
       createRawRow({
         年月度: "2026-01",
-        対象月: 1,
         シナリオ: "26年3月期着地見込0124時点",
-        数値区分: "見込",
         金額: 31,
       }),
       createRawRow({
         年月度: "2026-02",
-        対象月: 2,
         シナリオ: "26年3月期着地見込0124時点",
-        数値区分: "見込",
         金額: 35,
       }),
       createRawRow({
         年月度: "2026-03",
-        対象月: 3,
-        対象年度: 2026,
         シナリオ: "26年3月期着地見込0124時点",
-        数値区分: "見込",
         金額: 60,
       }),
       createRawRow({
         年月度: "2026-03",
-        対象月: 3,
-        対象年度: 2026,
         シナリオ: "26年3月期着地見込0224時点",
-        数値区分: "見込",
         金額: 65,
       }),
       createRawRow({
         科目コード: "9001",
         外部科目コード: "EXT-9001",
-        科目名: "ゼロ売上",
-        集計科目名: "売上高",
-        明細科目名: "ゼロ売上",
+        科目: "ゼロ売上",
         年月度: "2026-02",
-        対象月: 2,
         金額: 0,
       }),
     ];

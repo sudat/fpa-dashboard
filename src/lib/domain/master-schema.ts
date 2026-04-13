@@ -61,9 +61,8 @@ export type MappedDepartment = {
 };
 
 export type RawMasterMappingRow = {
-  部署名: string;
-  明細科目名?: string;
-  科目名?: string;
+  部署: string;
+  科目?: string;
   [key: string]: unknown;
 };
 
@@ -136,12 +135,12 @@ export function applyMasterMapping<T extends RawMasterMappingRow>(
     }
 
     return input.map((row) => {
-      const rawAccountName = normalizeName(row.明細科目名 ?? row.科目名 ?? UNASSIGNED_BUCKET.label);
+      const rawAccountName = normalizeName(row.科目 ?? UNASSIGNED_BUCKET.label);
 
       return {
         ...row,
         accountMapping: mapAccountName(rawAccountName, accountMaster),
-        departmentMapping: applyDepartmentMapping(row.部署名, departmentMaster),
+        departmentMapping: applyDepartmentMapping(row.部署, departmentMaster),
       };
     });
   }

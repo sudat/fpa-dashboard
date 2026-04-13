@@ -121,12 +121,12 @@ describe("master-schema", () => {
     const mappedRows = applyMasterMapping(
       [
         {
-          明細科目名: "SaaS利用料売上",
-          部署名: "SaaS事業部",
+          科目: "SaaS利用料売上",
+          部署: "SaaS事業部",
         },
         {
-          明細科目名: "未知の科目",
-          部署名: "未知の部署",
+          科目: "未知の科目",
+          部署: "未知の部署",
         },
       ],
       getDefaultAccountMaster(),

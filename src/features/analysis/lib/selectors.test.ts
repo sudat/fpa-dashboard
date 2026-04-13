@@ -3,7 +3,7 @@ import { describe, expect, test } from "vitest";
 import { aggregateByDepartment } from "@/features/admin/lib/grouping";
 import { generateComparisonData, normalizeRawRows } from "@/features/admin/lib/normalize-loglass";
 import type { ComparisonSet } from "@/features/admin/lib/normalize-loglass";
-import type { LoglassRawRow } from "@/lib/loglass/types";
+import type { LoglessRawRow } from "@/lib/loglass/types";
 
 import {
   getMajorAccountNames,
@@ -12,36 +12,28 @@ import {
   selectTrendSeries,
 } from "./selectors";
 
-function createRawRow(overrides: Partial<LoglassRawRow>): LoglassRawRow {
+function createRawRow(overrides: Partial<LoglessRawRow>): LoglessRawRow {
   return {
-    対象年度: 2026,
-    対象月: 2,
     シナリオ: "実績",
-    数値区分: "実績",
     年月度: "2026-02",
     部署コード: "D001",
     外部部署コード: "EXT-D001",
-    部署名: "SaaS事業部",
+    部署: "SaaS事業部",
     科目コード: "4001",
     外部科目コード: "EXT-4001",
-    科目名: "SaaS利用料売上",
-    集計科目名: "売上高",
-    明細科目名: "SaaS利用料売上",
+    科目: "SaaS利用料売上",
     科目タイプ: "収益",
     金額: 0,
     ...overrides,
   };
 }
 
-function buildAnalysisRawRows(): LoglassRawRow[] {
-  const rows: LoglassRawRow[] = [];
+function buildAnalysisRawRows(): LoglessRawRow[] {
+  const rows: LoglessRawRow[] = [];
 
   const addMonthRows = (input: {
     yearMonth: string;
-    targetYear: number;
-    targetMonth: number;
     scenario: string;
-    metricType: "実績" | "見込";
     d001Revenue: number;
     d002Revenue: number;
     d001Cost: number;
@@ -86,138 +78,98 @@ function buildAnalysisRawRows(): LoglassRawRow[] {
 
       rows.push(
         createRawRow({
-          対象年度: input.targetYear,
-          対象月: input.targetMonth,
           シナリオ: input.scenario,
-          数値区分: input.metricType,
           年月度: input.yearMonth,
           部署コード: unit.departmentCode,
           外部部署コード: unit.departmentExternalCode,
-          部署名: unit.departmentName,
+          部署: unit.departmentName,
           科目コード: unit.revenueDetailCode,
           外部科目コード: `EXT-${unit.revenueDetailCode}`,
-          科目名: unit.revenueDetailName,
-          集計科目名: "売上高",
-          明細科目名: unit.revenueDetailName,
+          科目: unit.revenueDetailName,
           科目タイプ: "収益",
           金額: unit.revenue,
         }),
         createRawRow({
-          対象年度: input.targetYear,
-          対象月: input.targetMonth,
           シナリオ: input.scenario,
-          数値区分: input.metricType,
           年月度: input.yearMonth,
           部署コード: unit.departmentCode,
           外部部署コード: unit.departmentExternalCode,
-          部署名: unit.departmentName,
+          部署: unit.departmentName,
           科目コード: "4000",
           外部科目コード: "EXT-4000",
-          科目名: "売上高",
-          集計科目名: "売上高",
-          明細科目名: "売上高",
+          科目: "売上高",
           科目タイプ: "収益",
           金額: unit.revenue,
         }),
         createRawRow({
-          対象年度: input.targetYear,
-          対象月: input.targetMonth,
           シナリオ: input.scenario,
-          数値区分: input.metricType,
           年月度: input.yearMonth,
           部署コード: unit.departmentCode,
           外部部署コード: unit.departmentExternalCode,
-          部署名: unit.departmentName,
+          部署: unit.departmentName,
           科目コード: unit.costDetailCode,
           外部科目コード: `EXT-${unit.costDetailCode}`,
-          科目名: unit.costDetailName,
-          集計科目名: "売上原価",
-          明細科目名: unit.costDetailName,
+          科目: unit.costDetailName,
           科目タイプ: "費用",
           金額: unit.cost,
         }),
         createRawRow({
-          対象年度: input.targetYear,
-          対象月: input.targetMonth,
           シナリオ: input.scenario,
-          数値区分: input.metricType,
           年月度: input.yearMonth,
           部署コード: unit.departmentCode,
           外部部署コード: unit.departmentExternalCode,
-          部署名: unit.departmentName,
+          部署: unit.departmentName,
           科目コード: "5000",
           外部科目コード: "EXT-5000",
-          科目名: "売上原価",
-          集計科目名: "売上原価",
-          明細科目名: "売上原価",
+          科目: "売上原価",
           科目タイプ: "費用",
           金額: unit.cost,
         }),
         createRawRow({
-          対象年度: input.targetYear,
-          対象月: input.targetMonth,
           シナリオ: input.scenario,
-          数値区分: input.metricType,
           年月度: input.yearMonth,
           部署コード: unit.departmentCode,
           外部部署コード: unit.departmentExternalCode,
-          部署名: unit.departmentName,
+          部署: unit.departmentName,
           科目コード: "6000",
           外部科目コード: "EXT-6000",
-          科目名: "売上総利益",
-          集計科目名: "売上総利益",
-          明細科目名: "売上総利益",
+          科目: "売上総利益",
           科目タイプ: "収益",
           金額: grossProfit,
         }),
         createRawRow({
-          対象年度: input.targetYear,
-          対象月: input.targetMonth,
           シナリオ: input.scenario,
-          数値区分: input.metricType,
           年月度: input.yearMonth,
           部署コード: unit.departmentCode,
           外部部署コード: unit.departmentExternalCode,
-          部署名: unit.departmentName,
+          部署: unit.departmentName,
           科目コード: unit.sgaDetailCode,
           外部科目コード: `EXT-${unit.sgaDetailCode}`,
-          科目名: unit.sgaDetailName,
-          集計科目名: "販管費",
-          明細科目名: unit.sgaDetailName,
+          科目: unit.sgaDetailName,
           科目タイプ: "費用",
           金額: unit.sga,
         }),
         createRawRow({
-          対象年度: input.targetYear,
-          対象月: input.targetMonth,
           シナリオ: input.scenario,
-          数値区分: input.metricType,
           年月度: input.yearMonth,
           部署コード: unit.departmentCode,
           外部部署コード: unit.departmentExternalCode,
-          部署名: unit.departmentName,
+          部署: unit.departmentName,
           科目コード: "7000",
           外部科目コード: "EXT-7000",
-          科目名: "販管費",
-          集計科目名: "販管費",
-          明細科目名: "販管費",
+          科目: "販管費",
           科目タイプ: "費用",
           金額: unit.sga,
         }),
         createRawRow({
-          対象年度: input.targetYear,
-          対象月: input.targetMonth,
           シナリオ: input.scenario,
-          数値区分: input.metricType,
           年月度: input.yearMonth,
           部署コード: unit.departmentCode,
           外部部署コード: unit.departmentExternalCode,
-          部署名: unit.departmentName,
+          部署: unit.departmentName,
           科目コード: "8000",
           外部科目コード: "EXT-8000",
-          科目名: "営業利益",
-          集計科目名: "営業利益",
-          明細科目名: "営業利益",
+          科目: "営業利益",
           科目タイプ: "収益",
           金額: operatingProfit,
         }),
@@ -227,10 +179,7 @@ function buildAnalysisRawRows(): LoglassRawRow[] {
 
   addMonthRows({
     yearMonth: "2025-04",
-    targetYear: 2026,
-    targetMonth: 4,
     scenario: "実績",
-    metricType: "実績",
     d001Revenue: 10,
     d002Revenue: 20,
     d001Cost: 4,
@@ -240,10 +189,7 @@ function buildAnalysisRawRows(): LoglassRawRow[] {
   });
   addMonthRows({
     yearMonth: "2025-05",
-    targetYear: 2026,
-    targetMonth: 5,
     scenario: "実績",
-    metricType: "実績",
     d001Revenue: 12,
     d002Revenue: 19,
     d001Cost: 5,
@@ -253,10 +199,7 @@ function buildAnalysisRawRows(): LoglassRawRow[] {
   });
   addMonthRows({
     yearMonth: "2026-02",
-    targetYear: 2026,
-    targetMonth: 2,
     scenario: "実績",
-    metricType: "実績",
     d001Revenue: 40,
     d002Revenue: 30,
     d001Cost: 11,
@@ -266,10 +209,7 @@ function buildAnalysisRawRows(): LoglassRawRow[] {
   });
   addMonthRows({
     yearMonth: "2024-04",
-    targetYear: 2025,
-    targetMonth: 4,
     scenario: "実績",
-    metricType: "実績",
     d001Revenue: 8,
     d002Revenue: 18,
     d001Cost: 3,
@@ -279,10 +219,7 @@ function buildAnalysisRawRows(): LoglassRawRow[] {
   });
   addMonthRows({
     yearMonth: "2024-05",
-    targetYear: 2025,
-    targetMonth: 5,
     scenario: "実績",
-    metricType: "実績",
     d001Revenue: 9,
     d002Revenue: 17,
     d001Cost: 4,
@@ -292,10 +229,7 @@ function buildAnalysisRawRows(): LoglassRawRow[] {
   });
   addMonthRows({
     yearMonth: "2025-02",
-    targetYear: 2025,
-    targetMonth: 2,
     scenario: "実績",
-    metricType: "実績",
     d001Revenue: 35,
     d002Revenue: 25,
     d001Cost: 9,
@@ -305,10 +239,7 @@ function buildAnalysisRawRows(): LoglassRawRow[] {
   });
   addMonthRows({
     yearMonth: "2025-03",
-    targetYear: 2025,
-    targetMonth: 3,
     scenario: "実績",
-    metricType: "実績",
     d001Revenue: 36,
     d002Revenue: 24,
     d001Cost: 9,
@@ -318,10 +249,7 @@ function buildAnalysisRawRows(): LoglassRawRow[] {
   });
   addMonthRows({
     yearMonth: "2025-04",
-    targetYear: 2026,
-    targetMonth: 4,
     scenario: "26年3月期着地見込0124時点",
-    metricType: "見込",
     d001Revenue: 11,
     d002Revenue: 18,
     d001Cost: 4,
@@ -331,10 +259,7 @@ function buildAnalysisRawRows(): LoglassRawRow[] {
   });
   addMonthRows({
     yearMonth: "2025-05",
-    targetYear: 2026,
-    targetMonth: 5,
     scenario: "26年3月期着地見込0124時点",
-    metricType: "見込",
     d001Revenue: 13,
     d002Revenue: 18,
     d001Cost: 5,
@@ -344,10 +269,7 @@ function buildAnalysisRawRows(): LoglassRawRow[] {
   });
   addMonthRows({
     yearMonth: "2026-02",
-    targetYear: 2026,
-    targetMonth: 2,
     scenario: "26年3月期着地見込0124時点",
-    metricType: "見込",
     d001Revenue: 38,
     d002Revenue: 29,
     d001Cost: 10,
@@ -357,10 +279,7 @@ function buildAnalysisRawRows(): LoglassRawRow[] {
   });
   addMonthRows({
     yearMonth: "2026-03",
-    targetYear: 2026,
-    targetMonth: 3,
     scenario: "26年3月期着地見込0124時点",
-    metricType: "見込",
     d001Revenue: 50,
     d002Revenue: 33,
     d001Cost: 14,
@@ -370,10 +289,7 @@ function buildAnalysisRawRows(): LoglassRawRow[] {
   });
   addMonthRows({
     yearMonth: "2026-03",
-    targetYear: 2026,
-    targetMonth: 3,
     scenario: "26年3月期着地見込0224時点",
-    metricType: "見込",
     d001Revenue: 55,
     d002Revenue: 36,
     d001Cost: 13,
@@ -385,12 +301,12 @@ function buildAnalysisRawRows(): LoglassRawRow[] {
   return rows;
 }
 
-function buildNormalizedDataset(rawRows: LoglassRawRow[]) {
+function buildNormalizedDataset(rawRows: LoglessRawRow[]) {
   const normalizedRows = normalizeRawRows(rawRows);
   return aggregateByDepartment(normalizedRows);
 }
 
-function buildComparisonDataset(rawRows: LoglassRawRow[]): ComparisonSet[] {
+function buildComparisonDataset(rawRows: LoglessRawRow[]): ComparisonSet[] {
   return generateComparisonData(buildNormalizedDataset(rawRows), "2026-02");
 }
 
