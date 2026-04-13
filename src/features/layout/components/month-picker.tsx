@@ -34,7 +34,7 @@ export function MonthPicker({ value, onChange }: MonthPickerProps) {
     <Popover open={open} onOpenChange={setOpen}>
       <PopoverTrigger
         render={
-          <Button variant="outline" size="sm" className="gap-1.5 font-normal">
+          <Button variant="outline" size="sm" className="justify-start gap-1.5 font-normal">
             <CalendarIcon className="size-4" />
             {formatMonthLabel(selected)}
           </Button>

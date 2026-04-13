@@ -1,0 +1,1 @@
+Core commands: `bun run build` (frontend production build), `bun run build:gas` (assemble gas-dist and copy gas/lib), `npx vitest run` (project tests), `node -c gas/lib/upload.js` (syntax check a GAS file), `bun run dev` (Vite dev server), `bun run lint` (ESLint). Environment is Linux/WSL; use standard shell commands like `git status`, `ls`, `pwd` as needed.

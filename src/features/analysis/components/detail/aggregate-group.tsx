@@ -1,9 +1,10 @@
 import { useState, useRef, useEffect, useCallback } from "react"
 import { ChevronRight } from "lucide-react"
 
+import { Badge } from "@/components/ui/badge"
 import { cn } from "@/lib/utils"
-import { EMPTY_STATE, SIGN_COLORS } from "@/lib/ui/tokens"
-import { TYPOGRAPHY, SPACING } from "@/lib/ui/theme"
+import { EMPTY_STATE } from "@/lib/ui/tokens"
+import { TYPOGRAPHY, SPACING, FINANCIAL_COLORS } from "@/lib/ui/theme"
 import { formatCurrency, formatCurrencyDelta } from "@/lib/format/currency"
 import { FinancialCell } from "@/features/analysis/components/shared/detail-table"
 import type { SummaryRow } from "@/features/analysis/lib/summary"
@@ -29,10 +30,10 @@ function DeltaValue({ value }: { value: number | null | undefined }) {
   }
   const color =
     value > 0
-      ? SIGN_COLORS.positive
+      ? FINANCIAL_COLORS.positive
       : value < 0
-        ? SIGN_COLORS.negative
-        : SIGN_COLORS.neutral
+        ? FINANCIAL_COLORS.negative
+        : FINANCIAL_COLORS.neutral
   return (
     <span className={cn(TYPOGRAPHY.financial, color)}>
       {formatCurrencyDelta(value)}
@@ -84,7 +85,8 @@ export function AggregateGroup({
         type="button"
         onClick={hasDetails ? handleToggle : undefined}
         className={cn(
-          "flex w-full items-center gap-2 px-3 transition-colors cursor-pointer",
+          "flex w-full items-center gap-2 px-3 text-left transition-colors outline-none",
+          hasDetails && "cursor-pointer focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 hover:bg-muted/50",
           SPACING.tableRowHeight,
           expanded && "bg-muted/50",
         )}
@@ -105,9 +107,9 @@ export function AggregateGroup({
         <span className={cn(TYPOGRAPHY.sectionHeader, "flex-1 text-left min-w-[120px]")}>
           {aggregateName}
           {isUnassigned && (
-            <span className="ml-2 inline-flex items-center rounded-none bg-amber-100 px-1.5 py-0.5 text-xs font-medium text-amber-800 dark:bg-amber-900/30 dark:text-amber-300">
+            <Badge variant="outline" className="ml-2 align-middle">
               未割当
-            </span>
+            </Badge>
           )}
         </span>
 
@@ -127,6 +129,14 @@ export function AggregateGroup({
 
       {expanded && hasDetails && (
         <table className="w-full border-collapse text-sm">
+          <colgroup>
+            <col />
+            <col className="w-[120px]" />
+            <col className="w-[120px]" />
+            <col className="w-[100px]" />
+            <col className="w-[120px]" />
+            <col className="w-[100px]" />
+          </colgroup>
           <tbody>
             {detailRows.map((row) => {
               const isHighlighted =
@@ -141,7 +151,7 @@ export function AggregateGroup({
                     isHighlighted && "bg-accent/50",
                   )}
                 >
-                  <td className="px-3 pl-10" style={{ width: "calc(100% - 540px)" }}>
+                  <td className="min-w-[200px] px-3 pl-10">
                     <span className="text-sm">{row.accountName}</span>
                   </td>
                   <td className="px-3 w-[120px] text-right">

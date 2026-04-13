@@ -12,6 +12,7 @@ import {
   TableRow,
 } from "@/components/ui/table";
 import { TYPOGRAPHY } from "@/lib/ui/theme";
+import { cn } from "@/lib/utils";
 
 interface AccountMappingTableProps {
   entries: AccountMasterEntry[];
@@ -37,6 +38,18 @@ export function AccountMappingTable({
   onAdd,
   onRemove,
 }: AccountMappingTableProps) {
+  const textInputClassName = cn(
+    "h-7 rounded-md border border-input bg-background px-2 text-sm shadow-xs transition-colors outline-none",
+    "focus-visible:border-ring focus-visible:ring-2 focus-visible:ring-ring/30"
+  );
+
+  const selectClassName = cn(textInputClassName, "pr-8");
+
+  const checkboxClassName = cn(
+    "size-4 cursor-pointer rounded-sm border border-input bg-background text-primary shadow-xs transition-colors",
+    "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring/30"
+  );
+
   const [newDetailName, setNewDetailName] = useState("");
   const [newAggregateName, setNewAggregateName] = useState("");
 
@@ -72,7 +85,7 @@ export function AccountMappingTable({
                   type="text"
                   value={entry.aggregateAccountName}
                   onChange={(e) => onUpdate(index, { aggregateAccountName: e.target.value })}
-                  className="h-7 w-full border border-input bg-transparent px-2 text-sm outline-none focus:border-ring"
+                   className={cn(textInputClassName, "w-full")}
                 />
               </TableCell>
               <TableCell>
@@ -80,7 +93,7 @@ export function AccountMappingTable({
                   type="number"
                   value={entry.sortOrder}
                   onChange={(e) => onUpdate(index, { sortOrder: Number(e.target.value) })}
-                  className="h-7 w-20 border border-input bg-transparent px-2 text-sm outline-none focus:border-ring"
+                   className={cn(textInputClassName, "w-20")}
                 />
               </TableCell>
               <TableCell className="text-center">
@@ -88,7 +101,7 @@ export function AccountMappingTable({
                   type="checkbox"
                   checked={entry.isGmv}
                   onChange={(e) => onUpdate(index, { isGmv: e.target.checked })}
-                  className="size-4 cursor-pointer"
+                   className={checkboxClassName}
                 />
               </TableCell>
               <TableCell>
@@ -96,14 +109,14 @@ export function AccountMappingTable({
                   <select
                     value={entry.bucketStatus}
                     onChange={(e) => onUpdate(index, { bucketStatus: e.target.value as AccountBucketStatus })}
-                    className="h-7 border border-input bg-transparent px-1 text-sm outline-none focus:border-ring"
+                    className={selectClassName}
                   >
                     {BUCKET_OPTIONS.map((opt) => (
                       <option key={opt.value} value={opt.value}>{opt.label}</option>
                     ))}
                   </select>
                   {entry.bucketStatus === "unassigned" && (
-                    <Badge variant="outline" className="border-amber-500 bg-amber-50 text-amber-700 text-[10px]">
+                    <Badge variant="outline" className="border-amber-500/30 bg-amber-500/10 text-[10px] text-amber-600 dark:text-amber-400">
                       未割当
                     </Badge>
                   )}
@@ -135,14 +148,14 @@ export function AccountMappingTable({
           placeholder="明細科目名"
           value={newDetailName}
           onChange={(e) => setNewDetailName(e.target.value)}
-          className="h-7 w-40 border border-input bg-transparent px-2 text-sm outline-none focus:border-ring"
+          className={cn(textInputClassName, "w-40")}
         />
         <input
           type="text"
           placeholder="集計科目名"
           value={newAggregateName}
           onChange={(e) => setNewAggregateName(e.target.value)}
-          className="h-7 w-40 border border-input bg-transparent px-2 text-sm outline-none focus:border-ring"
+          className={cn(textInputClassName, "w-40")}
           onKeyDown={(e) => { if (e.key === "Enter") handleAdd(); }}
         />
         <Button variant="outline" size="sm" onClick={handleAdd} disabled={!newDetailName.trim() || !newAggregateName.trim()}>

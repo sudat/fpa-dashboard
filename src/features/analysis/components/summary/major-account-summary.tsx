@@ -1,12 +1,12 @@
-import type { SummaryRow } from "@/features/analysis/lib/summary";
-import { EMPTY_STATE } from "@/lib/ui/tokens";
+import { AnalysisFallback } from "@/features/analysis/components/shared/analysis-fallback"
+import type { SummaryRow } from "@/features/analysis/lib/summary"
 
-import { SummaryCard } from "./summary-card";
+import { SummaryCard } from "./summary-card"
 
 export interface MajorAccountSummaryProps {
-  rows: SummaryRow[];
-  selectedAccount?: string | null;
-  onAccountSelect?: (accountName: string) => void;
+  rows: SummaryRow[]
+  selectedAccount?: string | null
+  onAccountSelect?: (accountName: string) => void
 }
 
 export function MajorAccountSummary({
@@ -15,14 +15,7 @@ export function MajorAccountSummary({
   onAccountSelect,
 }: MajorAccountSummaryProps) {
   if (rows.length === 0) {
-    return (
-      <div
-        className="flex items-center justify-center py-12 text-muted-foreground"
-        data-testid="major-account-summary-empty"
-      >
-        {EMPTY_STATE}
-      </div>
-    );
+    return <AnalysisFallback variant="empty" data-testid="major-account-summary-empty" />
   }
 
   return (
@@ -48,5 +41,5 @@ export function MajorAccountSummary({
         />
       ))}
     </div>
-  );
+  )
 }

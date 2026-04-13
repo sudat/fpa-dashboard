@@ -9,10 +9,13 @@ import {
 
 import {
   ChartContainer,
+  ChartLegend,
+  ChartLegendContent,
   ChartTooltip,
   ChartTooltipContent,
   type ChartConfig,
 } from "@/components/ui/chart"
+import { AnalysisFallback } from "@/features/analysis/components/shared/analysis-fallback"
 import { formatCurrencyDelta } from "@/lib/format/currency"
 import { CHART_COLORS } from "@/lib/ui/theme"
 import { EMPTY_STATE } from "@/lib/ui/tokens"
@@ -34,11 +37,7 @@ export function DifferenceChart({ data, onBarClick, className }: DifferenceChart
   const { items } = data
 
   if (items.length === 0) {
-    return (
-      <div className={cn("flex h-[240px] w-full items-center justify-center text-muted-foreground text-sm", className)}>
-        {EMPTY_STATE}
-      </div>
-    )
+    return <AnalysisFallback variant="empty" className={cn("h-[240px] py-0", className)} />
   }
 
   const chartData = items.map((item) => ({
@@ -74,9 +73,10 @@ export function DifferenceChart({ data, onBarClick, className }: DifferenceChart
             />
           }
         />
+        <ChartLegend content={<ChartLegendContent />} />
         <Bar
           dataKey="value"
-          radius={[0, 4, 4, 0]}
+          radius={4}
           cursor={onBarClick ? "pointer" : undefined}
           onClick={onBarClick ? (_data, index) => {
             const item = items[index]
@@ -84,7 +84,7 @@ export function DifferenceChart({ data, onBarClick, className }: DifferenceChart
           } : undefined}
         >
           {chartData.map((entry, index) => (
-            <Cell key={index} fill={entry.barColor} />
+            <Cell key={`${entry.label}-${index}`} fill={entry.barColor} />
           ))}
         </Bar>
       </BarChart>

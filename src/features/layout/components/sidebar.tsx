@@ -34,7 +34,7 @@ export function Sidebar({ activeNav, onNavChange }: SidebarProps) {
             variant="ghost"
             size="sm"
             className={cn(
-              "justify-start gap-2 px-3",
+              "w-full justify-start gap-2 px-3",
               activeNav === key && "bg-sidebar-accent text-sidebar-accent-foreground"
             )}
             onClick={() => onNavChange(key)}

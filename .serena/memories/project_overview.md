@@ -1,0 +1,1 @@
+FPA Dashboard is a React + TypeScript + Vite app with a Google Apps Script backend under gas/. The frontend lives in src/ and includes analysis, admin/upload, auth, and layout features. GAS modules use var-based namespace objects in gas/lib/*.js and are assembled into gas-dist/ for clasp deployment via scripts/build-gas.ts.

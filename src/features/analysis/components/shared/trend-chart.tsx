@@ -10,10 +10,13 @@ import {
 
 import {
   ChartContainer,
+  ChartLegend,
+  ChartLegendContent,
   ChartTooltip,
   ChartTooltipContent,
   type ChartConfig,
 } from "@/components/ui/chart"
+import { AnalysisFallback } from "@/features/analysis/components/shared/analysis-fallback"
 import { formatCurrency } from "@/lib/format/currency"
 import { formatRate } from "@/lib/format/rate"
 import { CHART_COLORS } from "@/lib/ui/theme"
@@ -45,11 +48,7 @@ export function TrendChart({ series, metricMode = "amount", className }: TrendCh
   const { points } = series
 
   if (points.length === 0) {
-    return (
-      <div className="flex h-[280px] w-full items-center justify-center text-muted-foreground text-sm">
-        {EMPTY_STATE}
-      </div>
-    )
+    return <AnalysisFallback variant="empty" className="h-[280px] py-0" />
   }
 
   const lastActualPoint = [...points]
@@ -90,6 +89,7 @@ export function TrendChart({ series, metricMode = "amount", className }: TrendCh
             />
           }
         />
+        <ChartLegend content={<ChartLegendContent />} />
         <Line
           type="monotone"
           dataKey="actual"

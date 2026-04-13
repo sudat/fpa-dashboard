@@ -27,12 +27,12 @@ export function MasterSaveBar({
     <div className="sticky bottom-0 flex items-center justify-between border-t bg-background px-4 py-3">
       <div className="flex items-center gap-3">
         {isDirty && (
-          <Badge variant="outline" className="border-blue-400 bg-blue-50 text-blue-700">
+          <Badge variant="outline" className="border-blue-500/30 bg-blue-500/10 text-blue-600 dark:text-blue-400">
             未保存の変更あり
           </Badge>
         )}
         {unassignedCount > 0 && (
-          <Badge variant="outline" className="border-amber-500 bg-amber-50 text-amber-700">
+          <Badge variant="outline" className="border-amber-500/30 bg-amber-500/10 text-amber-600 dark:text-amber-400">
             {unassignedCount}件の未割当があります
           </Badge>
         )}
@@ -42,7 +42,7 @@ export function MasterSaveBar({
           </span>
         )}
         {saveStatus === "success" && (
-          <Badge variant="outline" className="border-green-500 bg-green-50 text-green-700">
+          <Badge variant="outline" className="border-[color:var(--positive)] bg-positive-muted text-positive">
             保存しました
           </Badge>
         )}

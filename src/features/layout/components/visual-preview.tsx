@@ -155,20 +155,20 @@ export function VisualPreview() {
         <section className="space-y-4">
           <h2 className={TYPOGRAPHY.sectionHeader}>財務値カラー (Financial Colors)</h2>
           <div className="grid grid-cols-3 gap-4">
-            <div className="rounded-none border p-4 space-y-2">
+            <div className="rounded-lg border p-4 space-y-2">
               <p className={TYPOGRAPHY.small}>ポジティブ (Positive)</p>
               <p className="text-financial-lg text-positive">{POSITIVE_DELTA_PREFIX}12.5%</p>
-              <div className="h-2 w-full rounded-none bg-positive-muted" />
+              <div className="h-2 w-full rounded bg-positive-muted" />
             </div>
-            <div className="rounded-none border p-4 space-y-2">
+            <div className="rounded-lg border p-4 space-y-2">
               <p className={TYPOGRAPHY.small}>ネガティブ (Negative)</p>
               <p className="text-financial-lg text-negative">{NEGATIVE_PREFIX}8.3%</p>
-              <div className="h-2 w-full rounded-none bg-negative-muted" />
+              <div className="h-2 w-full rounded bg-negative-muted" />
             </div>
-            <div className="rounded-none border p-4 space-y-2">
+            <div className="rounded-lg border p-4 space-y-2">
               <p className={TYPOGRAPHY.small}>ニュートラル (Neutral)</p>
               <p className="text-financial-lg">―</p>
-              <div className="h-2 w-full rounded-none bg-muted" />
+              <div className="h-2 w-full rounded bg-muted" />
             </div>
           </div>
         </section>

@@ -1,7 +1,7 @@
 import { cn } from "@/lib/utils"
-import { TYPOGRAPHY, CHART_COLORS } from "@/lib/ui/theme"
-import { EMPTY_STATE } from "@/lib/ui/tokens"
-import { Card, CardContent } from "@/components/ui/card"
+import { TYPOGRAPHY } from "@/lib/ui/theme"
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
+import { AnalysisFallback } from "@/features/analysis/components/shared/analysis-fallback"
 import { DifferenceChart } from "@/features/analysis/components/shared/difference-chart"
 import type { DifferenceData, DifferenceItem } from "@/features/analysis/lib/difference"
 
@@ -18,36 +18,16 @@ export function DifferencePanel({ data, onBarClick, className }: DifferencePanel
 
   return (
     <Card className={cn("gap-2", className)}>
+      <CardHeader className="gap-0.5">
+        <CardTitle className={TYPOGRAPHY.sectionHeader}>差異分解</CardTitle>
+        <CardDescription>{data ? subheader : ""}</CardDescription>
+      </CardHeader>
       <CardContent className="space-y-2">
-        <div className="space-y-0.5">
-          <h3 className={TYPOGRAPHY.sectionHeader}>差異分解</h3>
-          <p className="text-xs text-muted-foreground">{data ? subheader : ""}</p>
-        </div>
 
         {data ? (
-          <>
-            <DifferenceChart data={data} onBarClick={onBarClick} />
-            <div className="flex items-center gap-4 text-xs">
-              <span className="flex items-center gap-1">
-                <span
-                  className="inline-block h-2.5 w-2.5 rounded-none"
-                  style={{ backgroundColor: CHART_COLORS.positive }}
-                />
-                好転
-              </span>
-              <span className="flex items-center gap-1">
-                <span
-                  className="inline-block h-2.5 w-2.5 rounded-none"
-                  style={{ backgroundColor: CHART_COLORS.negative }}
-                />
-                悪化
-              </span>
-            </div>
-          </>
+          <DifferenceChart data={data} onBarClick={onBarClick} />
         ) : (
-          <div className="flex h-[240px] w-full items-center justify-center text-muted-foreground text-sm">
-            {EMPTY_STATE}
-          </div>
+          <AnalysisFallback variant="empty" className="h-[240px] py-0" />
         )}
       </CardContent>
     </Card>

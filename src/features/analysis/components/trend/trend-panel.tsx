@@ -2,6 +2,7 @@ import { cn } from "@/lib/utils"
 import { TYPOGRAPHY } from "@/lib/ui/theme"
 import { Card, CardHeader, CardTitle, CardAction, CardContent } from "@/components/ui/card"
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs"
+import { AnalysisFallback } from "@/features/analysis/components/shared/analysis-fallback"
 import { TrendChart } from "@/features/analysis/components/shared/trend-chart"
 import type { TrendSeries } from "@/features/analysis/lib/trend"
 
@@ -40,9 +41,7 @@ export function TrendPanel({ series, metricMode, onMetricModeChange, className }
         {series ? (
           <TrendChart series={series} metricMode={metricMode} />
         ) : (
-          <div className="flex h-[280px] w-full items-center justify-center text-muted-foreground text-sm">
-            科目を選択してください
-          </div>
+          <AnalysisFallback variant="empty" message="科目を選択してください" className="h-[280px] py-0" />
         )}
       </CardContent>
     </Card>

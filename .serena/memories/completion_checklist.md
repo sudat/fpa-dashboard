@@ -1,0 +1,1 @@
+Before completing work: run lsp diagnostics on changed files, run relevant verification commands with fresh output, and for GAS changes usually run `node -c <file>` plus `bun run build:gas`. For frontend-impacting work also run `npx vitest run` and/or `bun run build`. Update `.sisyphus/notepads/<task>/learnings.md` by appending findings, not overwriting.

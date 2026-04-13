@@ -1,4 +1,5 @@
 import type { UploadMetadata } from "@/lib/domain/upload-contract"
+import { Button } from "@/components/ui/button"
 import { TYPOGRAPHY } from "@/lib/ui/theme"
 
 interface UploadStatusProps {
@@ -28,7 +29,7 @@ export function UploadStatus({
 }: UploadStatusProps) {
   if (phase === "uploading") {
     return (
-      <div className="flex items-center gap-3 rounded-none border bg-muted/30 px-4 py-3">
+      <div className="flex items-center gap-3 rounded-md border bg-muted/30 px-4 py-3">
         <div className="size-4 animate-spin rounded-full border-2 border-primary border-t-transparent" />
         <span className={TYPOGRAPHY.body}>アップロード中...</span>
       </div>
@@ -37,9 +38,9 @@ export function UploadStatus({
 
   if (phase === "success" && result) {
     return (
-      <div className="flex flex-col gap-2 rounded-none border border-green-500 bg-green-50 px-4 py-3 dark:bg-green-950/30">
+      <div className="flex flex-col gap-2 rounded-md border border-[color:var(--positive)] bg-positive-muted px-4 py-3">
         <div className="flex items-center gap-2">
-          <span className="text-green-600 text-sm font-medium">✓ アップロード成功</span>
+          <span className="text-positive text-sm font-medium">✓ アップロード成功</span>
         </div>
         <div className="flex flex-col gap-1">
           <span className={TYPOGRAPHY.small}>
@@ -55,38 +56,42 @@ export function UploadStatus({
             アップロード者: {result.uploader}
           </span>
         </div>
-        <button
+        <Button
+          variant="outline"
+          size="sm"
           onClick={onReset}
-          className="mt-2 self-start rounded-none border px-3 py-1.5 text-xs font-medium hover:bg-muted"
+          className="mt-2 self-start"
         >
           新しいアップロード
-        </button>
+        </Button>
       </div>
     )
   }
 
   if (phase === "error") {
     return (
-      <div className="flex flex-col gap-2 rounded-none border border-red-500 bg-red-50 px-4 py-3 dark:bg-red-950/30">
+      <div className="flex flex-col gap-2 rounded-md border border-[color:var(--negative)] bg-negative-muted px-4 py-3">
         <div className="flex items-center gap-2">
-          <span className="text-red-600 text-sm font-medium">✗ エラー</span>
+          <span className="text-negative text-sm font-medium">✗ エラー</span>
         </div>
         <p className={TYPOGRAPHY.small}>
           {errorMessage ?? "不明なエラーが発生しました"}
         </p>
         <div className="flex gap-2 mt-1">
-          <button
+          <Button
+            variant="destructive"
+            size="sm"
             onClick={onRetry}
-            className="rounded-none bg-red-600 px-3 py-1.5 text-xs font-medium text-white hover:bg-red-700"
           >
             再試行
-          </button>
-          <button
+          </Button>
+          <Button
+            variant="outline"
+            size="sm"
             onClick={onReset}
-            className="rounded-none border px-3 py-1.5 text-xs font-medium hover:bg-muted"
           >
             リセット
-          </button>
+          </Button>
         </div>
       </div>
     )

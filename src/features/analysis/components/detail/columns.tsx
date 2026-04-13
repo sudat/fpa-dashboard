@@ -1,18 +1,19 @@
 import { type ColumnDef } from "@tanstack/react-table"
 import { ChevronRight } from "lucide-react"
 
+import { Button } from "@/components/ui/button"
 import { cn } from "@/lib/utils"
 import { formatCurrency, formatCurrencyDelta } from "@/lib/format/currency"
-import { EMPTY_STATE, SIGN_COLORS } from "@/lib/ui/tokens"
-import { TYPOGRAPHY } from "@/lib/ui/theme"
+import { EMPTY_STATE } from "@/lib/ui/tokens"
+import { TYPOGRAPHY, FINANCIAL_COLORS } from "@/lib/ui/theme"
 import { FinancialCell } from "@/features/analysis/components/shared/detail-table"
 import type { SummaryRow } from "@/features/analysis/lib/summary"
 
 function deltaColorClass(value: number | null | undefined): string {
-  if (value === null || value === undefined) return SIGN_COLORS.empty
-  if (value > 0) return SIGN_COLORS.positive
-  if (value < 0) return SIGN_COLORS.negative
-  return SIGN_COLORS.neutral
+  if (value === null || value === undefined) return FINANCIAL_COLORS.empty
+  if (value > 0) return FINANCIAL_COLORS.positive
+  if (value < 0) return FINANCIAL_COLORS.negative
+  return FINANCIAL_COLORS.neutral
 }
 
 function DeltaCell({ value }: { value: number | null | undefined }) {
@@ -43,10 +44,11 @@ export function createDetailColumns(
         return (
           <div className="flex items-center gap-1">
             {canExpand && (
-              <button
+              <Button
                 type="button"
+                variant="ghost"
+                size="icon-xs"
                 onClick={row.getToggleExpandedHandler()}
-                className="flex h-5 w-5 items-center justify-center rounded hover:bg-muted"
                 aria-label={row.getIsExpanded() ? "折りたたむ" : "展開する"}
               >
                 <ChevronRight
@@ -55,7 +57,7 @@ export function createDetailColumns(
                     row.getIsExpanded() && "rotate-90",
                   )}
                 />
-              </button>
+              </Button>
             )}
             <span className={cn(!canExpand && "pl-6")}>{row.original.accountName}</span>
           </div>

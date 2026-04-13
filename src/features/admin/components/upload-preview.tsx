@@ -1,4 +1,5 @@
 import { Badge } from "@/components/ui/badge"
+import { Button } from "@/components/ui/button"
 import type { ReplacementWarning } from "@/lib/domain/upload-contract"
 import { TYPOGRAPHY } from "@/lib/ui/theme"
 
@@ -33,7 +34,7 @@ export function UploadPreview({
     <div className="flex flex-col gap-3">
       {fileName && (
         <div className="flex items-center gap-2">
-          <Badge variant="outline" className="rounded-none">ファイル</Badge>
+          <Badge variant="outline">ファイル</Badge>
           <span className={TYPOGRAPHY.body}>{fileName}</span>
           {fileSize != null && (
             <span className={TYPOGRAPHY.small}>({formatFileSize(fileSize)})</span>
@@ -42,7 +43,7 @@ export function UploadPreview({
       )}
 
       {previewData && (
-        <div className="rounded-none border px-3 py-2">
+        <div className="rounded-md border px-3 py-2">
           <div className="flex items-center gap-4">
             <span className={TYPOGRAPHY.small}>
               行数: <strong className="text-foreground">{previewData.rawRowCount}</strong>
@@ -58,28 +59,31 @@ export function UploadPreview({
       )}
 
       {replacementWarning && (
-        <div className="rounded-none border border-yellow-500 bg-yellow-50 px-4 py-3 dark:bg-yellow-950/30">
+        <div className="rounded-md border border-amber-500/30 bg-amber-500/10 px-4 py-3">
           <div className="flex flex-col gap-2">
             <div className="flex items-center gap-2">
-              <span className="text-yellow-600 text-sm font-medium">⚠ 上書き警告</span>
+              <span className="text-amber-600 text-sm font-medium dark:text-amber-400">⚠ 上書き警告</span>
             </div>
             <p className={TYPOGRAPHY.small}>{replacementWarning.message}</p>
             <p className={TYPOGRAPHY.small}>
               既存ラベル: <strong className="text-foreground">{replacementWarning.generatedLabel}</strong>
             </p>
             <div className="flex gap-2 mt-1">
-              <button
+              <Button
+                variant="outline"
+                size="sm"
                 onClick={onConfirmReplacement}
-                className="rounded-none bg-yellow-600 px-3 py-1.5 text-xs font-medium text-white hover:bg-yellow-700"
+                className="border-amber-500/30 bg-amber-500/10 text-amber-600 hover:bg-amber-500/20 hover:text-amber-700 dark:text-amber-400 dark:hover:text-amber-300"
               >
                 上書きを確認
-              </button>
-              <button
+              </Button>
+              <Button
+                variant="outline"
+                size="sm"
                 onClick={onCancelReplacement}
-                className="rounded-none border px-3 py-1.5 text-xs font-medium hover:bg-muted"
               >
                 キャンセル
-              </button>
+              </Button>
             </div>
           </div>
         </div>

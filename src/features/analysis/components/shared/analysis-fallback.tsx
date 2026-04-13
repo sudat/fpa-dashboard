@@ -1,3 +1,4 @@
+import { Button } from "@/components/ui/button"
 import { cn } from "@/lib/utils"
 import { EMPTY_STATE } from "@/lib/ui/tokens"
 import { TYPOGRAPHY } from "@/lib/ui/theme"
@@ -7,6 +8,7 @@ export interface AnalysisFallbackProps {
   message?: string
   onRetry?: () => void
   className?: string
+  "data-testid"?: string
 }
 
 const DEFAULT_MESSAGES: Record<AnalysisFallbackProps["variant"], string> = {
@@ -20,6 +22,7 @@ export function AnalysisFallback({
   message,
   onRetry,
   className,
+  "data-testid": dataTestId,
 }: AnalysisFallbackProps) {
   const displayMessage = message ?? DEFAULT_MESSAGES[variant]
 
@@ -30,7 +33,7 @@ export function AnalysisFallback({
         variant === "loading" && "animate-pulse",
         className,
       )}
-      data-testid={`analysis-fallback-${variant}`}
+      data-testid={dataTestId ?? `analysis-fallback-${variant}`}
       role={variant === "error" ? "alert" : "status"}
       aria-live={variant === "error" ? "assertive" : "polite"}
     >
@@ -45,23 +48,18 @@ export function AnalysisFallback({
       )}
 
       {variant === "error" && onRetry && (
-        <button
-          type="button"
+        <Button
+          variant="default"
+          size="sm"
           onClick={onRetry}
-          className={cn(
-            "mt-1 rounded-none px-3 py-1 text-xs font-medium",
-            "bg-primary text-primary-foreground",
-            "hover:bg-primary/90",
-            "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2",
-            "transition-colors",
-          )}
+          className="mt-1"
         >
           再試行
-        </button>
+        </Button>
       )}
 
       {variant === "loading" && (
-        <div className="mt-2 h-2 w-24 rounded bg-muted" />
+        <div className="mt-2 h-2 w-24 rounded-full bg-muted" />
       )}
     </div>
   )

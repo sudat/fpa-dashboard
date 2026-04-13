@@ -1,8 +1,8 @@
 import { useMemo, useRef, useEffect } from "react"
 
 import { cn } from "@/lib/utils"
-import { EMPTY_STATE } from "@/lib/ui/tokens"
 import { TYPOGRAPHY, SPACING } from "@/lib/ui/theme"
+import { AnalysisFallback } from "@/features/analysis/components/shared/analysis-fallback"
 import { AggregateGroup } from "./aggregate-group"
 import {
   getOrderedAggregateAccounts,
@@ -104,11 +104,7 @@ export function AggregateAccordionTable({
   }, [highlightedRowId])
 
   if (sections.length === 0) {
-    return (
-      <div className={cn("py-4 text-center text-sm text-muted-foreground", className)}>
-        {EMPTY_STATE}
-      </div>
-    )
+    return <AnalysisFallback variant="empty" className={cn("py-4", className)} />
   }
 
   return (

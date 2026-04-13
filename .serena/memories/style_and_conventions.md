@@ -1,0 +1,1 @@
+Frontend uses TypeScript/React with feature-based directories, tests via Vitest, and Tailwind/shadcn-style UI components. GAS code uses plain JavaScript, var declarations, namespace module pattern like `var Upload = Upload || {};`, and avoids ES module imports. Prefer KISS/DRY/YAGNI and keep backend response shapes stable for gas-client consumers.
