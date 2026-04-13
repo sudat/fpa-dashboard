@@ -1,0 +1,185 @@
+- generic [ref=e1]:
+  - generic [ref=e3]:
+    - generic [ref=e4]: FPA Dashboard
+    - generic [ref=e5]:
+      - complementary [ref=e6]:
+        - generic [ref=e8]: FPA Dashboard
+        - separator [ref=e9]
+        - navigation "メインナビゲーション" [ref=e10]:
+          - button "予実分析" [ref=e11]:
+            - img
+            - text: 予実分析
+          - button "管理" [ref=e12]:
+            - img
+            - text: 管理
+      - main [ref=e13]:
+        - generic [ref=e14]:
+          - generic [ref=e15]:
+            - generic [ref=e16]:
+              - button "2026年2月" [ref=e17]:
+                - img
+                - text: 2026年2月
+              - combobox [ref=e18]:
+                - generic [ref=e19]: "A:"
+                - generic [ref=e20]: __auto__
+                - img: ▼
+              - textbox [ref=e21]: __auto__
+              - combobox [ref=e22]:
+                - generic [ref=e23]: "B:"
+                - generic [ref=e24]: __auto__
+                - img: ▼
+              - textbox [ref=e25]: __auto__
+              - combobox [ref=e26]:
+                - generic [ref=e27]: "C:"
+                - generic [ref=e28]: __auto__
+                - img: ▼
+              - textbox [ref=e29]: __auto__
+              - combobox [ref=e30]:
+                - generic [ref=e31]: 全社
+                - img: ▼
+              - textbox [ref=e32]: 全社
+            - group "期間軸" [ref=e33]:
+              - button "着地見込" [pressed] [ref=e34]
+              - button "YTD" [ref=e35]
+              - button "単月" [ref=e36]
+          - generic [ref=e37]:
+            - paragraph [ref=e38]: 全社 — 着地見込 コンテンツ
+            - generic [ref=e40]:
+              - tablist [ref=e41]:
+                - tab "PL内訳" [ref=e42]
+                - tab "GMV比率" [ref=e43]
+                - tab "推移グラフ" [ref=e44]
+                - tab "差異分解" [active] [selected] [ref=e45]
+              - tabpanel "差異分解" [ref=e147]:
+                - generic [ref=e148]:
+                  - generic [ref=e149]:
+                    - generic [ref=e150]: 差異分解
+                    - generic [ref=e151]: （事業部別）
+                  - generic [ref=e155]:
+                    - generic [ref=e158]: 差異
+                    - application [ref=e160]:
+                      - generic [ref=e161]:
+                        - generic [ref=e162]:
+                          - generic [ref=e164]: "0"
+                          - generic [ref=e166]: "+1"
+                          - generic [ref=e168]: "+2"
+                          - generic [ref=e170]: "+3"
+                          - generic [ref=e172]: "+4"
+                        - generic [ref=e173]:
+                          - generic [ref=e175]: SaaS事業部⁠
+                          - generic [ref=e177]: 広告事業部⁠
+  - button "v3.0.2 Output Detail Standard React Components Hide Until Restart Marker Color Clear on copy/send Block page interactions Manage MCP & Webhooks Manage MCP & Webhooks MCP Connection MCP connection allows agents to receive and act on annotations. Learn more Webhooks Auto-Send The webhook URL will receive live annotation changes and annotation data." [ref=e89] [cursor=pointer]:
+    - img [ref=e91]
+    - generic:
+      - generic:
+        - button:
+          - img
+      - generic:
+        - button:
+          - img
+      - generic:
+        - button [disabled]:
+          - img
+      - generic:
+        - button [disabled]:
+          - img
+      - generic:
+        - button [disabled]:
+          - img
+      - generic:
+        - button [disabled]:
+          - img
+      - generic:
+        - button:
+          - img
+      - generic:
+        - button:
+          - img
+    - generic:
+      - generic:
+        - generic:
+          - generic:
+            - link:
+              - /url: https://agentation.com
+              - img
+            - paragraph: v3.0.2
+            - button "Switch to light mode":
+              - generic:
+                - generic:
+                  - img
+          - generic:
+            - generic:
+              - generic:
+                - text: Output Detail
+                - generic:
+                  - img
+              - button "Standard":
+                - generic: Standard
+            - generic:
+              - generic:
+                - text: React Components
+                - generic:
+                  - img
+              - generic:
+                - checkbox [checked]
+            - generic:
+              - generic:
+                - text: Hide Until Restart
+                - generic:
+                  - img
+              - generic:
+                - checkbox
+          - generic:
+            - generic: Marker Color
+            - generic:
+              - button "Indigo"
+              - button "Blue"
+              - button "Cyan"
+              - button "Green"
+              - button "Yellow"
+              - button "Orange"
+              - button "Red"
+          - generic:
+            - generic:
+              - generic:
+                - checkbox "Clear on copy/send"
+                - img
+              - generic: Clear on copy/send
+              - generic:
+                - img
+            - generic:
+              - generic:
+                - checkbox "Block page interactions" [checked]
+                - img
+              - generic: Block page interactions
+          - button "Manage MCP & Webhooks":
+            - generic: Manage MCP & Webhooks
+            - generic:
+              - img
+        - generic:
+          - button "Manage MCP & Webhooks":
+            - img
+            - generic: Manage MCP & Webhooks
+          - generic:
+            - generic:
+              - generic:
+                - text: MCP Connection
+                - generic:
+                  - img
+            - paragraph:
+              - text: MCP connection allows agents to receive and act on annotations.
+              - link "Learn more":
+                - /url: https://agentation.dev/mcp
+          - generic:
+            - generic:
+              - generic:
+                - text: Webhooks
+                - generic:
+                  - img
+              - generic:
+                - generic: Auto-Send
+                - generic:
+                  - checkbox "Auto-Send" [checked] [disabled]
+            - paragraph: The webhook URL will receive live annotation changes and annotation data.
+            - textbox "Webhook URL"
+  - generic [ref=e178]: SaaS事業部⁠
