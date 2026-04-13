@@ -20,7 +20,7 @@ describe("useAnalysisState", () => {
     expect(state.selectedAccount).toBeNull()
     expect(state.metricMode).toBe("amount")
     expect(state.weakLinkTarget).toBeNull()
-    expect(state.activeSubView).toBe("trend")
+    expect(state.activeSubView).toBe("pl")
   })
 
   it("setActiveTimeAxis does not change activeOrgTab", () => {
@@ -57,7 +57,7 @@ describe("useAnalysisState", () => {
     const { result } = renderHook(() => useAnalysisState())
 
     act(() => {
-      result.current[1].setActiveSubView("table")
+      result.current[1].setActiveSubView("gmv")
     })
     act(() => {
       result.current[1].setSelectedAccount("売上高")
@@ -65,7 +65,7 @@ describe("useAnalysisState", () => {
 
     const [state] = result.current
     expect(state.selectedAccount).toBe("売上高")
-    expect(state.activeSubView).toBe("table")
+    expect(state.activeSubView).toBe("gmv")
   })
 
   it("setMetricMode toggles between amount and gmvRatio", () => {
@@ -92,7 +92,7 @@ describe("useAnalysisState", () => {
       result.current[1].setActiveTimeAxis("YTD")
       result.current[1].setSelectedAccount("売上高")
       result.current[1].setMetricMode("gmvRatio")
-      result.current[1].setActiveSubView("table")
+      result.current[1].setActiveSubView("difference")
     })
 
     act(() => {
@@ -104,7 +104,7 @@ describe("useAnalysisState", () => {
     expect(state.activeTimeAxis).toBe("YTD")
     expect(state.selectedAccount).toBeNull()
     expect(state.metricMode).toBe("amount")
-    expect(state.activeSubView).toBe("trend")
+    expect(state.activeSubView).toBe("pl")
     expect(state.weakLinkTarget).toBeNull()
   })
 

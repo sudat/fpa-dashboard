@@ -104,7 +104,7 @@ export function AggregateGroup({
           <span className="w-4 shrink-0" />
         )}
 
-        <span className={cn(TYPOGRAPHY.sectionHeader, "flex-1 text-left min-w-[120px]")}>
+        <span className={cn(TYPOGRAPHY.sectionHeader, "w-[200px] text-left")}>
           {aggregateName}
           {isUnassigned && (
             <Badge variant="outline" className="ml-2 align-middle">

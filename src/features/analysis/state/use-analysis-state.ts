@@ -13,7 +13,7 @@ export interface AnalysisState {
   selectedAccount: string | null
   metricMode: "amount" | "gmvRatio"
   weakLinkTarget: WeakLinkTarget | null
-  activeSubView: "trend" | "table"
+  activeSubView: "pl" | "gmv" | "trend" | "difference"
   targetMonth: string
   selectedA: string | null
   selectedB: string | null
@@ -27,7 +27,7 @@ export type AnalysisAction =
   | { type: "SET_METRIC_MODE"; payload: "amount" | "gmvRatio" }
   | { type: "SET_WEAK_LINK_TARGET"; payload: WeakLinkTarget | null }
   | { type: "CLEAR_WEAK_LINK_TARGET" }
-  | { type: "SET_ACTIVE_SUB_VIEW"; payload: "trend" | "table" }
+  | { type: "SET_ACTIVE_SUB_VIEW"; payload: "pl" | "gmv" | "trend" | "difference" }
   | { type: "SET_TARGET_MONTH"; payload: string }
   | { type: "SET_SELECTED_A"; payload: string | null }
   | { type: "SET_SELECTED_B"; payload: string | null }
@@ -40,7 +40,7 @@ export const DEFAULT_STATE: AnalysisState = {
   selectedAccount: null,
   metricMode: "amount",
   weakLinkTarget: null,
-  activeSubView: "trend",
+  activeSubView: "pl",
   targetMonth: "2026-02",
   selectedA: null,
   selectedB: null,
@@ -86,7 +86,7 @@ export interface AnalysisActions {
   setSelectedAccount: (account: string | null) => void
   setMetricMode: (mode: "amount" | "gmvRatio") => void
   setWeakLinkTarget: (target: WeakLinkTarget | null) => void
-  setActiveSubView: (view: "trend" | "table") => void
+  setActiveSubView: (view: "pl" | "gmv" | "trend" | "difference") => void
   setTargetMonth: (month: string) => void
   setSelectedA: (a: string | null) => void
   setSelectedB: (b: string | null) => void
@@ -125,7 +125,7 @@ export function useAnalysisState(): [AnalysisState, AnalysisActions] {
     dispatch({ type: "SET_WEAK_LINK_TARGET", payload: target })
   }, [])
 
-  const setActiveSubView = useCallback((view: "trend" | "table") => {
+  const setActiveSubView = useCallback((view: "pl" | "gmv" | "trend" | "difference") => {
     dispatch({ type: "SET_ACTIVE_SUB_VIEW", payload: view })
   }, [])
 

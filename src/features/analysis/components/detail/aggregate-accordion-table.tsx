@@ -112,7 +112,7 @@ export function AggregateAccordionTable({
       <div className="sticky top-0 bg-background z-10 border-b">
         <div className={cn("flex items-center gap-2 px-3", SPACING.tableRowHeight)}>
           <span className="w-4 shrink-0" />
-          <span className={cn(TYPOGRAPHY.tableHeader, "flex-1 min-w-[120px]")}>科目名</span>
+          <span className={cn(TYPOGRAPHY.tableHeader, "w-[200px]")}>科目名</span>
           <span className={cn(TYPOGRAPHY.tableHeader, "w-[120px] text-right")}>B</span>
           <span className={cn(TYPOGRAPHY.tableHeader, "w-[100px] text-right")}>B-A</span>
           <span className={cn(TYPOGRAPHY.tableHeader, "w-[120px] text-right")}>C</span>
