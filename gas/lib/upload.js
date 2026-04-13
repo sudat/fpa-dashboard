@@ -107,7 +107,7 @@ Upload._parseXlsx = function (workbookDataBase64) {
  * Preview an upload: parse xlsx, check for replacement conflicts.
  * @param {string} workbookDataBase64 - Base64 encoded xlsx
  * @param {Object} scenarioInput - { kind, targetMonth, forecastStart? }
- * @returns {{ preview: { rawRowCount, departments, accounts }, replacementWarning: Object|null }}
+ * @returns {{ preview: { rawRowCount, departments, accounts, detectedScenarios }, replacementWarning: Object|null }}
  */
 Upload.previewUpload = function (workbookDataBase64, scenarioInput) {
   var dataRows = Upload._parseXlsx(workbookDataBase64);
@@ -121,6 +121,8 @@ Upload.previewUpload = function (workbookDataBase64, scenarioInput) {
     departments[dept] = true;
     accounts[acct] = true;
   }
+
+  var detectedScenarios = Detect.detectScenarioInputs(dataRows);
 
   var generatedLabel = Upload._generateScenarioLabel(scenarioInput);
   var conflict = History.findReplacementConflict(generatedLabel, scenarioInput.kind);
@@ -140,6 +142,7 @@ Upload.previewUpload = function (workbookDataBase64, scenarioInput) {
       rawRowCount: dataRows.length,
       departments: Object.keys(departments),
       accounts: Object.keys(accounts),
+      detectedScenarios: detectedScenarios,
     },
     replacementWarning: replacementWarning,
   };
