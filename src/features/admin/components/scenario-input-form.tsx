@@ -9,6 +9,25 @@ const KIND_OPTIONS: { value: ScenarioKind; label: string }[] = [
   { value: "forecast", label: "見込" },
 ]
 
+const YEAR_OPTIONS = Array.from({ length: 11 }, (_, i) => {
+  const year = new Date().getFullYear() - 3 + i
+  return { value: String(year), label: `${year}年` }
+})
+
+const MONTH_OPTIONS = Array.from({ length: 12 }, (_, i) => {
+  const month = i + 1
+  return { value: String(month).padStart(2, "0"), label: `${month}月` }
+})
+
+function parseYearMonth(value: string): { year: string; month: string } {
+  const [year = "", month = ""] = value.split("-")
+  return { year, month }
+}
+
+function formatYearMonth(year: string, month: string): string {
+  return `${year}-${month}`
+}
+
 interface ScenarioInputFormProps {
   value: Partial<ScenarioInput>
   generatedLabel: string | null
@@ -25,6 +44,8 @@ export function ScenarioInputForm({
   const kind = value.kind ?? ""
   const targetMonth = value.targetMonth ?? ""
   const forecastStart = value.forecastStart ?? ""
+  const { year: tmYear, month: tmMonth } = parseYearMonth(targetMonth)
+  const { year: fsYear, month: fsMonth } = parseYearMonth(forecastStart)
 
   const tryBuildInput = useCallback(
     (patch: Partial<ScenarioInput>) => {
@@ -57,18 +78,32 @@ export function ScenarioInputForm({
     [tryBuildInput],
   )
 
-  const handleTargetMonthChange = useCallback(
-    (e: ChangeEvent<HTMLInputElement>) => {
-      tryBuildInput({ targetMonth: e.target.value })
+  const handleTargetMonthYearChange = useCallback(
+    (e: ChangeEvent<HTMLSelectElement>) => {
+      tryBuildInput({ targetMonth: formatYearMonth(e.target.value, tmMonth) })
     },
-    [tryBuildInput],
+    [tryBuildInput, tmMonth],
   )
 
-  const handleForecastStartChange = useCallback(
-    (e: ChangeEvent<HTMLInputElement>) => {
-      tryBuildInput({ forecastStart: e.target.value || undefined })
+  const handleTargetMonthMonthChange = useCallback(
+    (e: ChangeEvent<HTMLSelectElement>) => {
+      tryBuildInput({ targetMonth: formatYearMonth(tmYear, e.target.value) })
     },
-    [tryBuildInput],
+    [tryBuildInput, tmYear],
+  )
+
+  const handleForecastStartYearChange = useCallback(
+    (e: ChangeEvent<HTMLSelectElement>) => {
+      tryBuildInput({ forecastStart: formatYearMonth(e.target.value, fsMonth) || undefined })
+    },
+    [tryBuildInput, fsMonth],
+  )
+
+  const handleForecastStartMonthChange = useCallback(
+    (e: ChangeEvent<HTMLSelectElement>) => {
+      tryBuildInput({ forecastStart: formatYearMonth(fsYear, e.target.value) || undefined })
+    },
+    [tryBuildInput, fsYear],
   )
 
   const showForecastStart = kind === "actual" || kind === "forecast"
@@ -97,28 +132,72 @@ export function ScenarioInputForm({
         <label htmlFor="target-month" className={`${TYPOGRAPHY.body} text-muted-foreground`}>
           対象月
         </label>
-        <input
-          id="target-month"
-          type="month"
-          value={targetMonth}
-          onChange={handleTargetMonthChange}
-          disabled={disabled}
-          className="h-8 rounded-none border bg-background px-2 text-sm disabled:opacity-50"
-        />
+        <div className="flex gap-2">
+          <select
+            id="target-month-year"
+            value={tmYear}
+            onChange={handleTargetMonthYearChange}
+            disabled={disabled}
+            className="h-8 rounded-none border bg-background px-2 text-sm disabled:opacity-50"
+          >
+            <option value="">--</option>
+            {YEAR_OPTIONS.map((opt) => (
+              <option key={opt.value} value={opt.value}>
+                {opt.label}
+              </option>
+            ))}
+          </select>
+          <select
+            id="target-month"
+            value={tmMonth}
+            onChange={handleTargetMonthMonthChange}
+            disabled={disabled}
+            className="h-8 rounded-none border bg-background px-2 text-sm disabled:opacity-50"
+          >
+            <option value="">--</option>
+            {MONTH_OPTIONS.map((opt) => (
+              <option key={opt.value} value={opt.value}>
+                {opt.label}
+              </option>
+            ))}
+          </select>
+        </div>
 
         {showForecastStart && (
           <>
             <label htmlFor="forecast-start" className={`${TYPOGRAPHY.body} text-muted-foreground`}>
               見込開始月
             </label>
-            <input
-              id="forecast-start"
-              type="month"
-              value={forecastStart}
-              onChange={handleForecastStartChange}
-              disabled={disabled}
-              className="h-8 rounded-none border bg-background px-2 text-sm disabled:opacity-50"
-            />
+            <div className="flex gap-2">
+              <select
+                id="forecast-start-year"
+                value={fsYear}
+                onChange={handleForecastStartYearChange}
+                disabled={disabled}
+                className="h-8 rounded-none border bg-background px-2 text-sm disabled:opacity-50"
+              >
+                <option value="">--</option>
+                {YEAR_OPTIONS.map((opt) => (
+                  <option key={opt.value} value={opt.value}>
+                    {opt.label}
+                  </option>
+                ))}
+              </select>
+              <select
+                id="forecast-start"
+                value={fsMonth}
+                onChange={handleForecastStartMonthChange}
+                disabled={disabled}
+                className="h-8 rounded-none border bg-background px-2 text-sm disabled:opacity-50"
+              >
+                <option value="">--</option>
+                {MONTH_OPTIONS.map((opt) => (
+                  <option key={opt.value} value={opt.value}>
+                    {opt.label}
+                  </option>
+                ))}
+              </select>
+            </div>
           </>
         )}
       </div>
