@@ -12,6 +12,7 @@ dist
 dist-ssr
 *.local
 .clasp.json
+.worktrees/
 
 # Editor directories and files
 .vscode/*
