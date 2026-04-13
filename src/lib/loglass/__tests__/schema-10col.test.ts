@@ -58,6 +58,18 @@ describe("loglessRawRowSchema — 10-column xlsx alignment", () => {
     expect(result.success).toBe(false);
   });
 
+  it("rejects blank 科目コード", () => {
+    const result = loglessRawRowSchema.safeParse({ ...validRow, 科目コード: "   " });
+
+    expect(result.success).toBe(false);
+  });
+
+  it("rejects blank 部署コード", () => {
+    const result = loglessRawRowSchema.safeParse({ ...validRow, 部署コード: "   " });
+
+    expect(result.success).toBe(false);
+  });
+
   it("accepts row without optional 外部科目コード and defaults it to empty", () => {
     const { 外部科目コード, ...rowWithout外部 } = validRow;
     const result = loglessRawRowSchema.parse(rowWithout外部);

@@ -3,7 +3,9 @@ import type { ScenarioKind, ScenarioInput, ReplacementWarning, UploadMetadata } 
 import { computeReplacementIdentity, scenarioInputSchema } from "@/lib/domain/upload-contract"
 import { gasClient, isGasAvailable } from "@/lib/gas/gas-client"
 import { generateScenarioLabel } from "@/lib/domain/scenario-label"
-import { detectScenariosFromBase64 } from "../lib/detect-client"
+import { detectScenariosFromBase64, parseUploadWorkbookFromBase64 } from "../lib/detect-client"
+
+const UPLOAD_ROW_CHUNK_SIZE = 1000
 
 export type UploadPhase =
   | "idle"
@@ -240,7 +242,52 @@ export function useUploadFlow() {
       const useMock = !isGasAvailable()
       const result = useMock
         ? mockCommitUpload(file.name, scenarioInput, replacementWarning)
-        : await gasClient.commitUpload(workbookBase64, file.name, scenarioInput, replacementWarning)
+        : await (async () => {
+          const { rawRows } = parseUploadWorkbookFromBase64(workbookBase64)
+          if (rawRows.length === 0) {
+            throw new Error("アップロード対象データが見つかりませんでした")
+          }
+          let uploadId: string | null = null
+          let abortFailure: Error | null = null
+
+          try {
+            const session = await gasClient.startUploadSession(
+              workbookBase64,
+              file.name,
+              scenarioInput,
+              replacementWarning,
+            )
+            uploadId = session.uploadId
+
+            for (let i = 0; i < rawRows.length; i += UPLOAD_ROW_CHUNK_SIZE) {
+              await gasClient.appendUploadRows(
+                uploadId,
+                rawRows.slice(i, i + UPLOAD_ROW_CHUNK_SIZE),
+              )
+            }
+
+            const finalized = await gasClient.finalizeUploadSession(uploadId)
+            uploadId = null
+            return finalized
+          } catch (error) {
+            if (uploadId) {
+              try {
+                await gasClient.abortUploadSession(uploadId)
+              } catch (cleanupError) {
+                abortFailure = cleanupError instanceof Error
+                  ? cleanupError
+                  : new Error("アップロード中断処理に失敗しました")
+              }
+            }
+
+            if (abortFailure) {
+              const baseMessage = error instanceof Error ? error.message : "アップロードエラー"
+              throw new Error(`${baseMessage} / 後片付けにも失敗しました: ${abortFailure.message}`)
+            }
+
+            throw error
+          }
+        })()
 
       if (operationId !== operationIdRef.current) return
 

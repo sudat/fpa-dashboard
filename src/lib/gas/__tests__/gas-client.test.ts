@@ -99,39 +99,70 @@ describe("gasClient", () => {
     await expect(promise).rejects.toThrow();
   });
 
-  it("commitUpload resolves with validated UploadMetadata", async () => {
+  it("startUploadSession resolves with a validated upload session", async () => {
     const { gasClient } = await import("@/lib/gas/gas-client");
 
     const workbookBase64 = "dGVzdA==";
     const scenarioInput = { kind: "actual" as const, targetMonth: "2026-01" };
-    const promise = gasClient.commitUpload(workbookBase64, "actual_2026-01.xlsx", scenarioInput, null);
+    const promise = gasClient.startUploadSession(workbookBase64, "actual_2026-01.xlsx", scenarioInput, null);
 
-    mockSuccessHandlers["commitUpload"]({
+    mockSuccessHandlers["startUploadSession"]({
       uploadId: "abc-123",
-      timestamp: "2026-01-15T10:30:00+09:00",
-      uploader: "test@example.com",
-      scenarioInput: { kind: "actual", targetMonth: "2026-01" },
-      generatedLabel: "2026/01月実績",
-      replacementIdentity: {
-        generatedLabel: "2026/01月実績",
-        scenarioFamily: "actual",
-      },
-      fileName: "actual_2026-01_2026-01-15T10:30:00+09:00.xlsx",
     });
 
     const result = await promise;
     expect(result.uploadId).toBe("abc-123");
-    expect(result.generatedLabel).toBe("2026/01月実績");
   });
 
-  it("commitUpload validates the workbook payload and sends the new GAS contract", async () => {
+  it("startUploadSession validates the workbook payload and sends the GAS contract", async () => {
     const { gasClient } = await import("@/lib/gas/gas-client");
 
     const workbookBase64 = "dGVzdA==";
     const scenarioInput = { kind: "actual" as const, targetMonth: "2026-01" };
-    const promise = gasClient.commitUpload(workbookBase64, "actual_2026-01.xlsx", scenarioInput, null);
+    const promise = gasClient.startUploadSession(workbookBase64, "actual_2026-01.xlsx", scenarioInput, null);
 
-    mockSuccessHandlers["commitUpload"]({
+    mockSuccessHandlers["startUploadSession"]({
+      uploadId: "abc-123",
+    });
+
+    await promise;
+    expect(mockCalls["startUploadSession"]?.[0]).toEqual([
+      workbookBase64,
+      "actual_2026-01.xlsx",
+      { kind: "actual", targetMonth: "2026-01" },
+      null,
+    ]);
+  });
+
+  it("appendUploadRows validates chunk rows before sending", async () => {
+    const { gasClient } = await import("@/lib/gas/gas-client");
+
+    const rows = [{
+      シナリオ: "実績",
+      年月度: "2026-01",
+      科目コード: "A001",
+      外部科目コード: "",
+      科目: "売上高",
+      科目タイプ: "収益",
+      部署コード: "D001",
+      外部部署コード: "",
+      部署: "営業部",
+      金額: 1000,
+    }];
+    const promise = gasClient.appendUploadRows("upload-1", rows);
+
+    mockSuccessHandlers["appendUploadRows"](undefined);
+
+    await promise;
+    expect(mockCalls["appendUploadRows"]?.[0]).toEqual(["upload-1", rows]);
+  });
+
+  it("finalizeUploadSession resolves with validated UploadMetadata", async () => {
+    const { gasClient } = await import("@/lib/gas/gas-client");
+
+    const promise = gasClient.finalizeUploadSession("upload-1");
+
+    mockSuccessHandlers["finalizeUploadSession"]({
       uploadId: "abc-123",
       timestamp: "2026-01-15T10:30:00+09:00",
       uploader: "test@example.com",
@@ -144,13 +175,20 @@ describe("gasClient", () => {
       fileName: "actual_2026-01.xlsx",
     });
 
-    await promise;
-    expect(mockCalls["commitUpload"]?.[0]).toEqual([
-      workbookBase64,
-      "actual_2026-01.xlsx",
-      { kind: "actual", targetMonth: "2026-01" },
-      null,
-    ]);
+    const result = await promise;
+    expect(result.uploadId).toBe("abc-123");
+    expect(mockCalls["finalizeUploadSession"]?.[0]).toEqual(["upload-1"]);
+  });
+
+  it("abortUploadSession resolves with a boolean result", async () => {
+    const { gasClient } = await import("@/lib/gas/gas-client");
+
+    const promise = gasClient.abortUploadSession("upload-1");
+
+    mockSuccessHandlers["abortUploadSession"](true);
+
+    await expect(promise).resolves.toBe(true);
+    expect(mockCalls["abortUploadSession"]?.[0]).toEqual(["upload-1"]);
   });
 
   it("getUploadHistory resolves with validated array", async () => {

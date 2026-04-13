@@ -17,8 +17,20 @@ function getCurrentUser() {
   return { email: email, name: name };
 }
 
-function commitUpload(workbookBase64, originalFileName, scenarioInput, confirmedReplacement) {
-  return Upload.commitUpload(workbookBase64, originalFileName, scenarioInput, confirmedReplacement);
+function startUploadSession(workbookBase64, originalFileName, scenarioInput, confirmedReplacement) {
+  return Upload.startUploadSession(workbookBase64, originalFileName, scenarioInput, confirmedReplacement);
+}
+
+function appendUploadRows(uploadId, uploadRows) {
+  return Upload.appendUploadRows(uploadId, uploadRows);
+}
+
+function finalizeUploadSession(uploadId) {
+  return Upload.finalizeUploadSession(uploadId);
+}
+
+function abortUploadSession(uploadId) {
+  return Upload.abortUploadSession(uploadId);
 }
 
 function getUploadHistory() {

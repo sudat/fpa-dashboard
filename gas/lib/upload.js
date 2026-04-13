@@ -82,74 +82,45 @@ Upload._generateScenarioLabel = function (scenarioInput) {
   return label;
 };
 
-Upload._invalidCell = function (rowNumber, label) {
-  throw new Error('アップロードファイル ' + rowNumber + ' 行目の' + label + 'が不正です');
-};
+Upload._toSheetRow = function (uploadRow, rowNumber) {
+  var scenario = String(uploadRow['シナリオ'] || '').trim();
+  var yearMonth = Upload._normalizePeriod(uploadRow['年月度']);
+  var accountCode = String(uploadRow['科目コード'] || '').trim();
+  var externalAccountCode = String(uploadRow['外部科目コード'] || '').trim();
+  var account = String(uploadRow['科目'] || '').trim();
+  var accountType = String(uploadRow['科目タイプ'] || '').trim();
+  var deptCode = String(uploadRow['部署コード'] || '').trim();
+  var externalDeptCode = String(uploadRow['外部部署コード'] || '').trim();
+  var dept = String(uploadRow['部署'] || '').trim();
+  var amount = Number(uploadRow['金額']);
 
-Upload._requireTrimmedString = function (value, rowNumber, label) {
-  var text = String(value == null ? '' : value).trim();
-  if (!text) {
-    Upload._invalidCell(rowNumber, label);
-  }
-  return text;
-};
-
-Upload._asFiniteNumber = function (value) {
-  if (typeof value === 'number' && isFinite(value)) {
-    return value;
-  }
-
-  return Number(String(value == null ? '' : value).trim().replace(/,/g, ''));
-};
-
-Upload._parseWorkbookDataRow = function (row, rowNumber) {
-  var cells = Array.isArray(row) ? row : [];
-  var scenario = String(cells[XLSX_COL.SCENARIO] == null ? '' : cells[XLSX_COL.SCENARIO]).trim();
-  if (!scenario) {
-    return null;
-  }
-
-  var yearMonth = Upload._normalizePeriod(cells[XLSX_COL.DATE]);
-  if (!yearMonth) {
-    Upload._invalidCell(rowNumber, '「年月」');
-  }
-
-  var amount = Upload._asFiniteNumber(cells[XLSX_COL.AMOUNT]);
-  if (!isFinite(amount)) {
-    Upload._invalidCell(rowNumber, '「金額」');
+  if (!scenario || !yearMonth || !accountCode || !account || !accountType || !deptCode || !dept || !isFinite(amount)) {
+    throw new Error('アップロード対象データ ' + rowNumber + ' 行目の形式が不正です。');
   }
 
   return [
     scenario,
     yearMonth,
-    Upload._requireTrimmedString(cells[XLSX_COL.ACCOUNT_CODE], rowNumber, '「科目コード」'),
-    String(cells[XLSX_COL.EXT_ACCOUNT_CODE] == null ? '' : cells[XLSX_COL.EXT_ACCOUNT_CODE]).trim(),
-    Upload._requireTrimmedString(cells[XLSX_COL.ACCOUNT], rowNumber, '「科目」'),
-    Upload._requireTrimmedString(cells[XLSX_COL.ACCOUNT_TYPE], rowNumber, '「科目タイプ」'),
-    Upload._requireTrimmedString(cells[XLSX_COL.DEPT_CODE], rowNumber, '「部署コード」'),
-    String(cells[XLSX_COL.EXT_DEPT_CODE] == null ? '' : cells[XLSX_COL.EXT_DEPT_CODE]).trim(),
-    Upload._requireTrimmedString(cells[XLSX_COL.DEPT], rowNumber, '「部署」'),
+    accountCode,
+    externalAccountCode,
+    account,
+    accountType,
+    deptCode,
+    externalDeptCode,
+    dept,
     amount,
   ];
 };
 
-Upload._buildSheetRows = function (workbookRows) {
-  if (!Array.isArray(workbookRows) || workbookRows.length <= 1) {
-    throw new Error('アップロード対象データが見つかりませんでした。');
+Upload._buildChunkSheetRows = function (uploadRows, rowOffset) {
+  if (!Array.isArray(uploadRows) || uploadRows.length === 0) {
+    throw new Error('アップロード対象データが空です。');
   }
 
-  var rows = [UPLOAD_SHEET_HEADER.slice()];
-  for (var i = 1; i < workbookRows.length; i++) {
-    var sheetRow = Upload._parseWorkbookDataRow(workbookRows[i], i + 1);
-    if (sheetRow) {
-      rows.push(sheetRow);
-    }
+  var rows = [];
+  for (var i = 0; i < uploadRows.length; i++) {
+    rows.push(Upload._toSheetRow(uploadRows[i], rowOffset + i));
   }
-
-  if (rows.length === 1) {
-    throw new Error('アップロード対象データが見つかりませんでした。');
-  }
-
   return rows;
 };
 
@@ -213,69 +184,55 @@ Upload._getUploadFolder = function () {
   return DriveApp.createFolder(UPLOADS_FOLDER_NAME);
 };
 
-Upload._readWorkbookRowsFromFileId = function (fileId) {
-  var workbook = SpreadsheetApp.openById(fileId);
-  var sheets = workbook.getSheets();
-  var firstSheet = sheets && sheets.length > 0 ? sheets[0] : null;
-  if (!firstSheet) {
-    return [];
-  }
-  return firstSheet.getDataRange().getValues();
+Upload._sessionCacheKey = function (uploadId) {
+  return 'upload-session:' + uploadId;
 };
 
-Upload._readWorkbookRowsFromBlob = function (workbookBlob, parentFolderId, uploadId) {
-  var convertedResource = {
-    title: 'tmp_upload_' + uploadId,
-    mimeType: MimeType.GOOGLE_SHEETS,
-  };
-  if (parentFolderId) {
-    convertedResource.parents = [{ id: parentFolderId }];
-  }
-
-  var convertedFile = Drive.Files.insert(convertedResource, workbookBlob, {
-    supportsAllDrives: true,
-  });
-  try {
-    return Upload._readWorkbookRowsFromFileId(convertedFile.id);
-  } finally {
-    DriveApp.getFileById(convertedFile.id).setTrashed(true);
-  }
-};
-
-Upload._persistWorkbook = function (workbookBase64, originalFileName, uploadId) {
-  var workbookBlob = Upload._createWorkbookBlob(workbookBase64, originalFileName);
-  var uploadFolder = Upload._getUploadFolder();
-  var archiveFile = uploadFolder.createFile(
-    workbookBlob.copyBlob().setName(Upload._buildArchiveFileName(uploadId, originalFileName))
+Upload._saveUploadSession = function (session) {
+  CacheService.getScriptCache().put(
+    Upload._sessionCacheKey(session.uploadId),
+    JSON.stringify(session),
+    21600
   );
+};
 
-  try {
-    return {
-      driveFileId: archiveFile.getId(),
-      sheetRows: Upload._buildSheetRows(Upload._readWorkbookRowsFromBlob(workbookBlob, uploadFolder.getId(), uploadId)),
-    };
-  } catch (error) {
-    archiveFile.setTrashed(true);
-    throw error;
+Upload._loadUploadSession = function (uploadId) {
+  var cached = CacheService.getScriptCache().get(Upload._sessionCacheKey(uploadId));
+  if (!cached) {
+    return null;
+  }
+  return JSON.parse(cached);
+};
+
+Upload._clearUploadSession = function (uploadId) {
+  CacheService.getScriptCache().remove(Upload._sessionCacheKey(uploadId));
+};
+
+Upload._deleteSheetIfExists = function (sheetName) {
+  var sheet = SheetUtils.getSpreadsheet().getSheetByName(sheetName);
+  if (sheet) {
+    SheetUtils.getSpreadsheet().deleteSheet(sheet);
   }
 };
 
-/**
- * Commit an upload: archive the workbook, persist normalized upload rows to a per-upload sheet, and record history.
- * @param {string} workbookBase64 - Original workbook payload encoded as base64
- * @param {string} originalFileName - Selected file name from the browser
- * @param {Object} scenarioInput - { kind, targetMonth, forecastStart? }
- * @param {Object|null} confirmedReplacement - Replacement warning object if confirmed
- * @returns {Object} UploadMetadata
- */
-Upload.commitUpload = function (workbookBase64, originalFileName, scenarioInput, confirmedReplacement) {
+Upload._trashFileIfExists = function (fileId) {
+  if (!fileId) {
+    return;
+  }
+  DriveApp.getFileById(fileId).setTrashed(true);
+};
+
+Upload._isDomainPolicyDisabledError = function (error) {
+  var message = error && error.message ? String(error.message) : String(error || '');
+  return message.indexOf('ドメイン管理者') >= 0 || message.indexOf('domain administrator') >= 0;
+};
+
+Upload.startUploadSession = function (workbookBase64, originalFileName, scenarioInput, confirmedReplacement) {
   var generatedLabel = Upload._generateScenarioLabel(scenarioInput);
   var conflict = History.findReplacementConflict(generatedLabel, scenarioInput.kind);
-
   if (conflict && !confirmedReplacement) {
     throw new Error('上書き確認が必要です。replacementWarning を確認してください。');
   }
-
   if (conflict && confirmedReplacement) {
     if (confirmedReplacement.existingUploadId !== conflict.uploadId) {
       throw new Error('上書き対象が変更されています。再度アップロード実行してください。');
@@ -286,22 +243,11 @@ Upload.commitUpload = function (workbookBase64, originalFileName, scenarioInput,
   var timestamp = SheetUtils.now();
   var uploadId = SheetUtils.generateId();
   var sheetName = 'upload_' + uploadId;
-  var persistedUpload = Upload._persistWorkbook(workbookBase64, originalFileName, uploadId);
-  var sheetRows = persistedUpload.sheetRows;
-
-  if (conflict && confirmedReplacement) {
-    var oldSheetName = conflict.sheetName || ('upload_' + conflict.uploadId);
-    var oldSheet = SheetUtils.getSpreadsheet().getSheetByName(oldSheetName);
-    if (oldSheet) {
-      SheetUtils.getSpreadsheet().deleteSheet(oldSheet);
-    }
-  }
-
-  SheetUtils.writeRows(sheetName, sheetRows);
-
   var normalizedFileName = String(originalFileName || '').trim() || (scenarioInput.kind + '_' + scenarioInput.targetMonth + '.xlsx');
-
-  var metadata = {
+  var workbookBlob = Upload._createWorkbookBlob(workbookBase64, originalFileName);
+  var archiveFile = null;
+  var sheetInitialized = false;
+  var session = {
     uploadId: uploadId,
     timestamp: timestamp,
     uploader: uploader,
@@ -316,21 +262,116 @@ Upload.commitUpload = function (workbookBase64, originalFileName, scenarioInput,
       scenarioFamily: scenarioInput.kind,
     },
     fileName: normalizedFileName,
-    driveFileId: persistedUpload.driveFileId,
-    rowCount: sheetRows.length - 1,
+    driveFileId: '',
+    rowCount: 0,
     sheetName: sheetName,
+    replacementUploadId: confirmedReplacement ? confirmedReplacement.existingUploadId : '',
   };
 
-  History.addUploadEntry(metadata);
+  try {
+    try {
+      var uploadFolder = Upload._getUploadFolder();
+      archiveFile = uploadFolder.createFile(
+        workbookBlob.copyBlob().setName(Upload._buildArchiveFileName(uploadId, originalFileName))
+      );
+      session.driveFileId = archiveFile.getId();
+    } catch (archiveError) {
+      if (!Upload._isDomainPolicyDisabledError(archiveError)) {
+        throw archiveError;
+      }
+    }
+
+    SheetUtils.writeRows(sheetName, [UPLOAD_SHEET_HEADER.slice()]);
+    sheetInitialized = true;
+    Upload._saveUploadSession(session);
+    return { uploadId: uploadId };
+  } catch (error) {
+    if (sheetInitialized) {
+      Upload._deleteSheetIfExists(sheetName);
+    }
+    if (archiveFile) {
+      archiveFile.setTrashed(true);
+    }
+    throw error;
+  }
+};
+
+Upload.appendUploadRows = function (uploadId, uploadRows) {
+  var session = Upload._loadUploadSession(uploadId);
+  if (!session) {
+    throw new Error('アップロードセッションが見つかりません。再度アップロード実行してください。');
+  }
+
+  var sheetRows = Upload._buildChunkSheetRows(uploadRows, session.rowCount + 2);
+  SheetUtils.appendRows(session.sheetName, sheetRows);
+  session.rowCount += sheetRows.length;
+  Upload._saveUploadSession(session);
+};
+
+Upload.abortUploadSession = function (uploadId) {
+  var session = Upload._loadUploadSession(uploadId);
+  if (!session) {
+    return false;
+  }
+
+  Upload._deleteSheetIfExists(session.sheetName);
+  Upload._trashFileIfExists(session.driveFileId);
+  Upload._clearUploadSession(uploadId);
+  return true;
+};
+
+Upload.finalizeUploadSession = function (uploadId) {
+  var session = Upload._loadUploadSession(uploadId);
+  if (!session) {
+    throw new Error('アップロードセッションが見つかりません。再度アップロード実行してください。');
+  }
+
+  if (session.rowCount <= 0) {
+    Upload.abortUploadSession(uploadId);
+    throw new Error('アップロード対象データが見つかりませんでした。');
+  }
+
+  var conflict = History.findReplacementConflict(
+    session.generatedLabel,
+    session.replacementIdentity.scenarioFamily
+  );
+
+  if (conflict && !session.replacementUploadId) {
+    Upload.abortUploadSession(uploadId);
+    throw new Error('上書き確認が必要です。replacementWarning を確認してください。');
+  }
+
+  if (conflict && session.replacementUploadId && session.replacementUploadId !== conflict.uploadId) {
+    Upload.abortUploadSession(uploadId);
+    throw new Error('上書き対象が変更されています。再度アップロード実行してください。');
+  }
+
+  if (conflict && session.replacementUploadId) {
+    Upload._deleteSheetIfExists(conflict.sheetName || ('upload_' + conflict.uploadId));
+  }
+
+  History.addUploadEntry({
+    uploadId: session.uploadId,
+    timestamp: session.timestamp,
+    uploader: session.uploader,
+    scenarioInput: session.scenarioInput,
+    generatedLabel: session.generatedLabel,
+    replacementIdentity: session.replacementIdentity,
+    fileName: session.fileName,
+    driveFileId: session.driveFileId,
+    rowCount: session.rowCount,
+    sheetName: session.sheetName,
+  });
+  Upload._clearUploadSession(uploadId);
 
   return {
-    uploadId: metadata.uploadId,
-    timestamp: metadata.timestamp,
-    uploader: metadata.uploader,
-    scenarioInput: metadata.scenarioInput,
-    generatedLabel: metadata.generatedLabel,
-    replacementIdentity: metadata.replacementIdentity,
-    fileName: metadata.fileName,
+    uploadId: session.uploadId,
+    timestamp: session.timestamp,
+    uploader: session.uploader,
+    scenarioInput: session.scenarioInput,
+    generatedLabel: session.generatedLabel,
+    replacementIdentity: session.replacementIdentity,
+    fileName: session.fileName,
   };
 };
 

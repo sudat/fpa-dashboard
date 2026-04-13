@@ -5,7 +5,9 @@
     "ses_279a82a2bffeB5k8j3ZVqM7Rk6",
     "ses_27969c220ffex1bczkjlslFfdo",
     "ses_27969c3abffeV8GXPJEdyhbcI3",
-    "ses_27969c058ffeWZEoKLI27KVcCh"
+    "ses_27969c058ffeWZEoKLI27KVcCh",
+    "ses_27946574fffeQ4HQiXDYTIrcmR",
+    "ses_27939e6e8ffeLTrpbOplrzOaCM"
   ],
   "plan_name": "analysis-layout-restructure",
   "agent": "atlas",
@@ -18,6 +20,24 @@
       "agent": "Sisyphus-Junior",
       "category": "quick",
       "updated_at": "2026-04-13T11:26:49.900Z"
+    },
+    "todo:4": {
+      "task_key": "todo:4",
+      "task_label": "4",
+      "task_title": "GmvRatioPanel コンポーネント新規追加",
+      "session_id": "ses_27946574fffeQ4HQiXDYTIrcmR",
+      "agent": "Sisyphus-Junior",
+      "category": "unspecified-high",
+      "updated_at": "2026-04-13T12:07:47.602Z"
+    },
+    "todo:5": {
+      "task_key": "todo:5",
+      "task_label": "5",
+      "task_title": "AnalysisWorkspace タブ化リファクタ",
+      "session_id": "ses_27939e6e8ffeLTrpbOplrzOaCM",
+      "agent": "Sisyphus-Junior",
+      "category": "deep",
+      "updated_at": "2026-04-13T12:22:45.087Z"
     }
   }
 }

@@ -405,7 +405,7 @@ Parallel Speedup: ~40% faster than sequential
   - Files: `aggregate-accordion-table.tsx, aggregate-group.tsx`
   - Pre-commit: `bunx vitest run src/features/analysis/components/detail/`
 
-- [ ] 4. GmvRatioPanel コンポーネント新規追加
+- [x] 4. GmvRatioPanel コンポーネント新規追加
 
   **What to do**:
   - `src/features/analysis/components/summary/gmv-ratio-panel.tsx` を新規作成

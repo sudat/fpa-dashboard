@@ -8,6 +8,8 @@ import {
   uploadMetadataSchema,
   scenarioInputSchema,
 } from "@/lib/domain/upload-contract";
+import type { LoglessRawRow } from "@/lib/loglass/types";
+import { loglassRawRowArraySchema } from "@/lib/loglass/schema";
 import type {
   AccountMasterEntry,
   DepartmentMasterEntry,
@@ -46,6 +48,10 @@ const currentUserSchema = z.object({
   email: z.string().min(1),
   name: z.string().min(1),
 });
+const uploadSessionIdSchema = z.string().trim().min(1);
+const uploadSessionSchema = z.object({
+  uploadId: uploadSessionIdSchema,
+});
 const workbookBase64Schema = z.string().trim().min(1);
 const uploadFileNameSchema = z.string().trim().min(1);
 
@@ -78,7 +84,10 @@ declare global {
       script?: {
         run?: GasRunnerWithHandlers & {
           getCurrentUser: GasRunner<() => CurrentUser>;
-          commitUpload: GasRunner<(workbookBase64: string, originalFileName: string, scenarioInput: ScenarioInput, confirmedReplacement: ReplacementWarning | null) => UploadMetadata>;
+          startUploadSession: GasRunner<(workbookBase64: string, originalFileName: string, scenarioInput: ScenarioInput, confirmedReplacement: ReplacementWarning | null) => { uploadId: string }>;
+          appendUploadRows: GasRunner<(uploadId: string, uploadRows: LoglessRawRow[]) => void>;
+          finalizeUploadSession: GasRunner<(uploadId: string) => UploadMetadata>;
+          abortUploadSession: GasRunner<(uploadId: string) => boolean>;
           getUploadHistory: GasRunner<() => UploadMetadata[]>;
           getAccountMaster: GasRunner<() => AccountMasterEntry[]>;
           saveAccountMaster: GasRunner<(entries: AccountMasterEntry[]) => void>;
@@ -169,17 +178,37 @@ export const gasClient = {
     );
   },
 
-  commitUpload(
+  startUploadSession(
     workbookBase64: string,
     originalFileName: string,
     scenarioInput: ScenarioInput,
     confirmedReplacement: ReplacementWarning | null,
-  ): Promise<UploadMetadata> {
+  ): Promise<{ uploadId: string }> {
     const validatedWorkbookBase64 = workbookBase64Schema.parse(workbookBase64);
     const validatedFileName = uploadFileNameSchema.parse(originalFileName);
     const validated = scenarioInputSchema.parse(scenarioInput);
-    return runGas<UploadMetadata>("commitUpload", validatedWorkbookBase64, validatedFileName, validated, confirmedReplacement).then((r) =>
+    return runGas<{ uploadId: string }>("startUploadSession", validatedWorkbookBase64, validatedFileName, validated, confirmedReplacement).then((r) =>
+      uploadSessionSchema.parse(r),
+    );
+  },
+
+  appendUploadRows(uploadId: string, uploadRows: LoglessRawRow[]): Promise<void> {
+    const validatedUploadId = uploadSessionIdSchema.parse(uploadId);
+    const validatedRows = loglassRawRowArraySchema.parse(uploadRows);
+    return runGas<void>("appendUploadRows", validatedUploadId, validatedRows);
+  },
+
+  finalizeUploadSession(uploadId: string): Promise<UploadMetadata> {
+    const validatedUploadId = uploadSessionIdSchema.parse(uploadId);
+    return runGas<UploadMetadata>("finalizeUploadSession", validatedUploadId).then((r) =>
       uploadMetadataSchema.parse(r),
+    );
+  },
+
+  abortUploadSession(uploadId: string): Promise<boolean> {
+    const validatedUploadId = uploadSessionIdSchema.parse(uploadId);
+    return runGas<boolean>("abortUploadSession", validatedUploadId).then((r) =>
+      z.boolean().parse(r),
     );
   },
 

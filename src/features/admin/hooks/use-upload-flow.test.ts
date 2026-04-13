@@ -3,19 +3,27 @@ import { describe, it, expect, vi, beforeEach, afterEach } from "vitest"
 
 const mocks = vi.hoisted(() => ({
   detectScenariosFromBase64: vi.fn(),
+  parseUploadWorkbookFromBase64: vi.fn(),
   getUploadHistory: vi.fn(),
-  commitUpload: vi.fn(),
+  startUploadSession: vi.fn(),
+  appendUploadRows: vi.fn(),
+  finalizeUploadSession: vi.fn(),
+  abortUploadSession: vi.fn(),
   isGasAvailable: vi.fn(() => true),
 }))
 
 vi.mock("../lib/detect-client", () => ({
   detectScenariosFromBase64: mocks.detectScenariosFromBase64,
+  parseUploadWorkbookFromBase64: mocks.parseUploadWorkbookFromBase64,
 }))
 
 vi.mock("@/lib/gas/gas-client", () => ({
   gasClient: {
     getUploadHistory: mocks.getUploadHistory,
-    commitUpload: mocks.commitUpload,
+    startUploadSession: mocks.startUploadSession,
+    appendUploadRows: mocks.appendUploadRows,
+    finalizeUploadSession: mocks.finalizeUploadSession,
+    abortUploadSession: mocks.abortUploadSession,
   },
   isGasAvailable: mocks.isGasAvailable,
 }))
@@ -63,6 +71,23 @@ function createDetectedScenarios() {
   ]
 }
 
+function createUploadRows() {
+  return [
+    {
+      シナリオ: "実績",
+      年月度: "2026-02",
+      科目コード: "A001",
+      外部科目コード: "",
+      科目: "売上高",
+      科目タイプ: "収益",
+      部署コード: "D001",
+      外部部署コード: "",
+      部署: "営業部",
+      金額: 1200000,
+    },
+  ]
+}
+
 function createUploadMetadata() {
   return {
     uploadId: "upload-1",
@@ -85,12 +110,23 @@ function createUploadMetadata() {
 beforeEach(() => {
   vi.stubGlobal("FileReader", ImmediateFileReader)
   mocks.detectScenariosFromBase64.mockReset()
+  mocks.parseUploadWorkbookFromBase64.mockReset()
   mocks.getUploadHistory.mockReset()
-  mocks.commitUpload.mockReset()
+  mocks.startUploadSession.mockReset()
+  mocks.appendUploadRows.mockReset()
+  mocks.finalizeUploadSession.mockReset()
+  mocks.abortUploadSession.mockReset()
   mocks.isGasAvailable.mockReset()
   mocks.detectScenariosFromBase64.mockReturnValue(createDetectedScenarios())
+  mocks.parseUploadWorkbookFromBase64.mockReturnValue({
+    rawRows: createUploadRows(),
+    detectedScenarios: createDetectedScenarios(),
+  })
   mocks.getUploadHistory.mockResolvedValue([])
-  mocks.commitUpload.mockResolvedValue(createUploadMetadata())
+  mocks.startUploadSession.mockResolvedValue({ uploadId: "upload-1" })
+  mocks.appendUploadRows.mockResolvedValue(undefined)
+  mocks.finalizeUploadSession.mockResolvedValue(createUploadMetadata())
+  mocks.abortUploadSession.mockResolvedValue(true)
   mocks.isGasAvailable.mockReturnValue(true)
 })
 
@@ -122,6 +158,7 @@ describe("useUploadFlow", () => {
       forecastStart: "2026-03",
     })
     expect(result.current.state.generatedLabel).toBe("2026/02月実績(見込:3月~)")
+    expect(mocks.parseUploadWorkbookFromBase64).not.toHaveBeenCalled()
   })
 
   it("sets a reading state while FileReader is still pending", async () => {
@@ -178,7 +215,7 @@ describe("useUploadFlow", () => {
 
     expect(result.current.state.phase).toBe("warning_shown")
     expect(result.current.state.replacementWarning?.existingUploadId).toBe("upload-1")
-    expect(mocks.commitUpload).not.toHaveBeenCalled()
+    expect(mocks.startUploadSession).not.toHaveBeenCalled()
   })
 
   it("commits after confirmation when a replacement warning is shown", async () => {
@@ -201,8 +238,9 @@ describe("useUploadFlow", () => {
 
     expect(result.current.state.phase).toBe("success")
     expect(result.current.state.result?.generatedLabel).toBe("2026/02月実績(見込:3月~)")
-    expect(mocks.commitUpload).toHaveBeenCalledTimes(1)
-    expect(mocks.commitUpload).toHaveBeenCalledWith(
+    expect(mocks.startUploadSession).toHaveBeenCalledTimes(1)
+    expect(mocks.parseUploadWorkbookFromBase64).toHaveBeenCalledWith("dGVzdA==")
+    expect(mocks.startUploadSession).toHaveBeenCalledWith(
       "dGVzdA==",
       "data.xlsx",
       {
@@ -214,6 +252,25 @@ describe("useUploadFlow", () => {
         existingUploadId: "upload-1",
       }),
     )
+    expect(mocks.appendUploadRows).toHaveBeenCalledWith("upload-1", createUploadRows())
+    expect(mocks.finalizeUploadSession).toHaveBeenCalledWith("upload-1")
+  })
+
+  it("aborts the upload session when a chunk append fails", async () => {
+    const { result } = renderHook(() => useUploadFlow())
+    mocks.appendUploadRows.mockRejectedValueOnce(new Error("chunk failed"))
+
+    await act(async () => {
+      await result.current.selectFile(createFile())
+    })
+
+    await act(async () => {
+      await result.current.commit()
+    })
+
+    expect(result.current.state.phase).toBe("error")
+    expect(result.current.state.errorMessage).toContain("chunk failed")
+    expect(mocks.abortUploadSession).toHaveBeenCalledWith("upload-1")
   })
 
   it("dismisses a validation error back to idle when no file is selected", async () => {

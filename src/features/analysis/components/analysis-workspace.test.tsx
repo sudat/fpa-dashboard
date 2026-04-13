@@ -1,10 +1,11 @@
+import React from "react"
+
 import { act, fireEvent, render, screen } from "@testing-library/react"
 import { describe, expect, it, vi, beforeEach, afterEach } from "vitest"
 
 import { generateComparisonData, normalizeRawRows } from "@/features/admin/lib/normalize-loglass"
 import { aggregateByDepartment } from "@/features/admin/lib/grouping"
 import { buildAnalysisFixtureRawRows } from "@/features/analysis/hooks/use-analysis-data"
-import type { SummaryRow } from "@/features/analysis/lib/summary"
 import {
   DEFAULT_STATE,
   useAnalysisState,
@@ -12,30 +13,52 @@ import {
   type AnalysisState,
 } from "@/features/analysis/state/use-analysis-state"
 
-const majorAccountSummaryPropsSpy = vi.fn()
+const gmvRatioPanelPropsSpy = vi.fn()
 const trendPanelPropsSpy = vi.fn()
 const differencePanelPropsSpy = vi.fn()
 const detailPanelPropsSpy = vi.fn()
 
-vi.mock("@/features/analysis/components/summary/major-account-summary", () => ({
-  MajorAccountSummary: ({
-    rows,
-    selectedAccount,
-    onAccountSelect,
+vi.mock("@/components/ui/tabs", () => ({
+  Tabs: ({
+    value,
+    onValueChange,
+    children,
   }: {
-    rows: SummaryRow[]
-    selectedAccount: string | null
-    onAccountSelect: (account: string | null) => void
+    value: string
+    onValueChange: (v: string) => void
+    children: React.ReactNode
   }) => {
-    majorAccountSummaryPropsSpy({ rows, selectedAccount })
+    void onValueChange
 
     return (
-      <div data-testid="major-account-summary">
-        <button type="button" onClick={() => onAccountSelect(rows[0]?.accountName ?? null)}>
-          summary-select-first
-        </button>
+      <div data-testid="tabs" data-value={value}>
+        {children}
       </div>
     )
+  },
+  TabsList: ({ children, ...props }: { children: React.ReactNode; variant?: string }) => {
+    return (
+      <div data-testid="tabs-list" data-variant={props.variant}>
+        {children}
+      </div>
+    )
+  },
+  TabsTrigger: ({ value, children }: { value: string; children: React.ReactNode }) => {
+    return (
+      <button type="button" data-testid={`tab-trigger-${value}`}>
+        {children}
+      </button>
+    )
+  },
+  TabsContent: ({ value, children }: { value: string; children: React.ReactNode }) => {
+    return <div data-testid={`tab-content-${value}`}>{children}</div>
+  },
+}))
+
+vi.mock("@/features/analysis/components/summary/gmv-ratio-panel", () => ({
+  GmvRatioPanel: ({ rows }: { rows: Array<{ accountName: string }> }) => {
+    gmvRatioPanelPropsSpy({ rows })
+    return <div data-testid="gmv-ratio-panel">GMV比率パネル:{rows.length}件</div>
   },
 }))
 
@@ -126,7 +149,7 @@ function AnalysisWorkspaceHarness() {
 
 describe("AnalysisWorkspace", () => {
   beforeEach(() => {
-    majorAccountSummaryPropsSpy.mockClear()
+    gmvRatioPanelPropsSpy.mockClear()
     trendPanelPropsSpy.mockClear()
     differencePanelPropsSpy.mockClear()
     detailPanelPropsSpy.mockClear()
@@ -136,13 +159,18 @@ describe("AnalysisWorkspace", () => {
     vi.useRealTimers()
   })
 
-  it("renders summary, trend, difference, and detail sections", () => {
+  it("renders 4 tab triggers and content panels", () => {
     renderWorkspace()
 
-    expect(screen.getByTestId("major-account-summary")).toBeInTheDocument()
-    expect(screen.getByText("差異分解")).toBeInTheDocument()
-    expect(screen.getByText(/詳細テーブル:/)).toBeInTheDocument()
-    expect(screen.getAllByText("科目を選択してください").length).toBeGreaterThan(0)
+    expect(screen.getByTestId("tabs")).toBeInTheDocument()
+    expect(screen.getByTestId("tab-trigger-pl")).toHaveTextContent("PL内訳")
+    expect(screen.getByTestId("tab-trigger-gmv")).toHaveTextContent("GMV比率")
+    expect(screen.getByTestId("tab-trigger-trend")).toHaveTextContent("推移グラフ")
+    expect(screen.getByTestId("tab-trigger-difference")).toHaveTextContent("差異分解")
+    expect(screen.getByTestId("tab-content-pl")).toBeInTheDocument()
+    expect(screen.getByTestId("tab-content-gmv")).toBeInTheDocument()
+    expect(screen.getByTestId("tab-content-trend")).toBeInTheDocument()
+    expect(screen.getByTestId("tab-content-difference")).toBeInTheDocument()
   })
 
   it("renders selected account trend series when an account is selected", () => {
@@ -158,6 +186,7 @@ describe("AnalysisWorkspace", () => {
         actions={createActions()}
         comparisonData={comparisonData}
         normalizedRows={normalizedRows}
+        targetMonth="2026-02"
       />,
     )
 
@@ -167,10 +196,11 @@ describe("AnalysisWorkspace", () => {
         actions={createActions()}
         comparisonData={comparisonData}
         normalizedRows={normalizedRows}
+        targetMonth="2026-02"
       />,
     )
 
-    expect(screen.getByText("差異分解")).toBeInTheDocument()
+    expect(screen.getByTestId("tabs")).toBeInTheDocument()
     expect(screen.getByText(/詳細テーブル:/)).toBeInTheDocument()
   })
 
@@ -178,26 +208,6 @@ describe("AnalysisWorkspace", () => {
     expect(resolveDepartmentCode("全社")).toBe("ALL")
     expect(resolveDepartmentCode("SaaS事業部")).toBe("D001")
     expect(resolveDepartmentCode("広告事業部")).toBe("D002")
-  })
-
-  it("summary card click fires setSelectedAccount only", () => {
-    const actions = createActions()
-
-    render(
-      <AnalysisWorkspace
-        state={DEFAULT_STATE}
-        actions={actions}
-        comparisonData={comparisonData}
-        normalizedRows={normalizedRows}
-      />,
-    )
-
-    fireEvent.click(screen.getByRole("button", { name: "summary-select-first" }))
-
-    expect(actions.setSelectedAccount).toHaveBeenCalledTimes(1)
-    expect(actions.setSelectedAccount).toHaveBeenCalledWith("売上高")
-    expect(actions.setWeakLinkTarget).not.toHaveBeenCalled()
-    expect(actions.setMetricMode).not.toHaveBeenCalled()
   })
 
   it("difference bar click fires setWeakLinkTarget", () => {
@@ -209,6 +219,7 @@ describe("AnalysisWorkspace", () => {
         actions={actions}
         comparisonData={comparisonData}
         normalizedRows={normalizedRows}
+        targetMonth="2026-02"
       />,
     )
 
@@ -226,6 +237,14 @@ describe("AnalysisWorkspace", () => {
 
     expect(screen.getByText("詳細テーブル:広告事業部\u2060")).toBeInTheDocument()
     expect(detailPanelPropsSpy).toHaveBeenLastCalledWith({ highlightedRowId: "広告事業部\u2060" })
+  })
+
+  it("passes gmvRatioRows to GmvRatioPanel", () => {
+    renderWorkspace()
+
+    expect(gmvRatioPanelPropsSpy).toHaveBeenCalled()
+    const { rows } = gmvRatioPanelPropsSpy.mock.calls[0][0]
+    expect(rows.length).toBeGreaterThan(0)
   })
 
   it("clicking a difference bar sets and auto-clears weak link target after 3 seconds", () => {

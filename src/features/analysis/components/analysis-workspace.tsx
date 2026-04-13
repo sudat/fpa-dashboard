@@ -1,11 +1,12 @@
 import { Component, useMemo, type ReactNode } from "react"
 
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { DifferencePanel } from "@/features/analysis/components/difference/difference-panel"
 import { DetailPanel } from "@/features/analysis/components/detail/detail-panel"
-import { MajorAccountSummary } from "@/features/analysis/components/summary/major-account-summary"
+import { GmvRatioPanel } from "@/features/analysis/components/summary/gmv-ratio-panel"
 import { TrendPanel } from "@/features/analysis/components/trend/trend-panel"
 import { AnalysisFallback } from "@/features/analysis/components/shared/analysis-fallback"
-import { selectDifferenceData, selectSummaryRows, selectTrendSeries } from "@/features/analysis/lib/selectors"
+import { selectDifferenceData, selectGmvRatios, selectSummaryRows, selectTrendSeries } from "@/features/analysis/lib/selectors"
 import { getMajorAccountNames, parseComparisonRowKey, type SummaryRow } from "@/features/analysis/lib/summary"
 import type { AnalysisActions, AnalysisState } from "@/features/analysis/state/use-analysis-state"
 import { ORG_TABS, type OrgTab } from "@/features/layout/components/top-tabs"
@@ -103,19 +104,6 @@ export function AnalysisWorkspace({
   loading,
   className,
 }: AnalysisWorkspaceProps) {
-  if (loading) {
-    return (
-    <div className={cn("flex flex-col gap-6", className)} data-testid="analysis-workspace" aria-live="polite">
-        <AnalysisFallback variant="loading" />
-        <div className="flex flex-col gap-6 xl:flex-row">
-          <AnalysisFallback variant="loading" className="xl:flex-1" />
-          <AnalysisFallback variant="loading" className="xl:w-[45%] xl:min-w-[360px]" />
-        </div>
-        <AnalysisFallback variant="loading" />
-      </div>
-    )
-  }
-
   const departmentCode = resolveDepartmentCode(state.activeOrgTab)
   const departmentScope = resolveDepartmentScope(state.activeOrgTab)
   const periodType = resolvePeriodType(state.activeTimeAxis)
@@ -172,7 +160,7 @@ export function AnalysisWorkspace({
     }
 
     return selectTrendSeries(normalizedRows, selectedAccountCode, departmentCode, periodType, targetMonth)
-  }, [departmentCode, normalizedRows, periodType, selectedAccountCode])
+  }, [departmentCode, normalizedRows, periodType, selectedAccountCode, targetMonth])
 
   const differenceData = useMemo(
     () => {
@@ -193,43 +181,73 @@ export function AnalysisWorkspace({
     [comparisonData, departmentCode, departmentScope, periodType],
   )
 
-  return (
-    <div className={cn("flex flex-col gap-6", className)} data-testid="analysis-workspace" aria-live="polite">
-      <PanelErrorBoundary>
-        <MajorAccountSummary
-          rows={summaryRows}
-          selectedAccount={state.selectedAccount}
-          onAccountSelect={actions.setSelectedAccount}
-        />
-      </PanelErrorBoundary>
+  const gmvRatioRows = useMemo(
+    () => selectGmvRatios(comparisonData, departmentCode, periodType),
+    [comparisonData, departmentCode, periodType],
+  )
 
-      <div className="flex flex-col gap-6 xl:flex-row">
-        <PanelErrorBoundary>
-          <TrendPanel
-            series={trendSeries}
-            metricMode={state.metricMode === "gmvRatio" ? "rate" : "amount"}
-            onMetricModeChange={(mode) => actions.setMetricMode(mode === "rate" ? "gmvRatio" : "amount")}
-            className="xl:flex-1"
-          />
-        </PanelErrorBoundary>
-
-        <PanelErrorBoundary>
-          <DifferencePanel
-            data={differenceData}
-            onBarClick={(item) => {
-              actions.setWeakLinkTarget({
-                accountName: item.label,
-                expandedAt: Date.now(),
-              })
-            }}
-            className="xl:w-[45%] xl:min-w-[360px]"
-          />
-        </PanelErrorBoundary>
+  if (loading) {
+    return (
+      <div className={cn("flex flex-col gap-4", className)} data-testid="analysis-workspace" aria-live="polite">
+        <AnalysisFallback variant="loading" />
+        <AnalysisFallback variant="loading" className="h-[400px]" />
       </div>
+    )
+  }
 
-      <PanelErrorBoundary>
-        <DetailPanel rows={summaryRows} detailRows={detailRows} highlightedRowId={state.weakLinkTarget?.accountName} />
-      </PanelErrorBoundary>
+  return (
+    <div className={cn("flex flex-col gap-4", className)} data-testid="analysis-workspace" aria-live="polite">
+      <Tabs
+        value={state.activeSubView}
+        onValueChange={(value) => {
+          if (value === "pl" || value === "gmv" || value === "trend" || value === "difference") {
+            actions.setActiveSubView(value)
+          }
+        }}
+      >
+        <TabsList variant="line">
+          <TabsTrigger value="pl">PL内訳</TabsTrigger>
+          <TabsTrigger value="gmv">GMV比率</TabsTrigger>
+          <TabsTrigger value="trend">推移グラフ</TabsTrigger>
+          <TabsTrigger value="difference">差異分解</TabsTrigger>
+        </TabsList>
+        <TabsContent value="pl">
+          <PanelErrorBoundary>
+            <DetailPanel
+              rows={summaryRows}
+              detailRows={detailRows}
+              highlightedRowId={state.weakLinkTarget?.accountName}
+            />
+          </PanelErrorBoundary>
+        </TabsContent>
+        <TabsContent value="gmv">
+          <PanelErrorBoundary>
+            <GmvRatioPanel rows={gmvRatioRows} />
+          </PanelErrorBoundary>
+        </TabsContent>
+        <TabsContent value="trend">
+          <PanelErrorBoundary>
+            <TrendPanel
+              series={trendSeries}
+              metricMode={state.metricMode === "gmvRatio" ? "rate" : "amount"}
+              onMetricModeChange={(mode) => actions.setMetricMode(mode === "rate" ? "gmvRatio" : "amount")}
+            />
+          </PanelErrorBoundary>
+        </TabsContent>
+        <TabsContent value="difference">
+          <PanelErrorBoundary>
+            <DifferencePanel
+              data={differenceData}
+              onBarClick={(item) => {
+                actions.setWeakLinkTarget({
+                  accountName: item.label,
+                  expandedAt: Date.now(),
+                })
+              }}
+            />
+          </PanelErrorBoundary>
+        </TabsContent>
+      </Tabs>
     </div>
   )
 }

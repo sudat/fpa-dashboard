@@ -40,11 +40,11 @@ export const prototypeLoglassCsvRowSchema = z.object({
 export const loglessRawRowSchema = z.object({
   シナリオ: nonEmptyString,
   年月度: z.string().regex(yearMonthPattern),
-  科目コード: z.string().trim(),
+  科目コード: nonEmptyString,
   外部科目コード: z.string().trim().default(""),
   科目: nonEmptyString,
   科目タイプ: accountTypeSchema,
-  部署コード: z.string().trim(),
+  部署コード: nonEmptyString,
   外部部署コード: z.string().trim().default(""),
   部署: nonEmptyString,
   金額: z.coerce.number().finite(),
