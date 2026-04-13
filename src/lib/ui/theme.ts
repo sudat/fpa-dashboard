@@ -4,9 +4,9 @@ export const SIDEBAR_COLLAPSED_WIDTH = 48;
 export const TYPOGRAPHY = {
   pageTitle: "text-xl font-semibold tracking-tight",
   sectionHeader: "text-base font-medium",
-  tableHeader: "text-xs font-medium uppercase tracking-wider text-muted-foreground",
+  tableHeader: "text-sm font-medium uppercase tracking-wider text-muted-foreground",
   body: "text-sm",
-  small: "text-xs text-muted-foreground",
+  small: "text-sm text-muted-foreground",
   financial: "font-mono text-sm tabular-nums tracking-tight",
   financialLg: "font-mono text-2xl font-semibold tabular-nums tracking-tight",
 } as const;
