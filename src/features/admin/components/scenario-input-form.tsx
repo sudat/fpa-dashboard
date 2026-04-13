@@ -1,4 +1,4 @@
-import { useCallback, type ChangeEvent } from "react"
+import { useState, useCallback, type ChangeEvent } from "react"
 import type { ScenarioKind, ScenarioInput } from "@/lib/domain/upload-contract"
 import { scenarioInputSchema } from "@/lib/domain/upload-contract"
 import { TYPOGRAPHY } from "@/lib/ui/theme"
@@ -24,10 +24,6 @@ function parseYearMonth(value: string): { year: string; month: string } {
   return { year, month }
 }
 
-function formatYearMonth(year: string, month: string): string {
-  return `${year}-${month}`
-}
-
 interface ScenarioInputFormProps {
   value: Partial<ScenarioInput>
   generatedLabel: string | null
@@ -41,69 +37,81 @@ export function ScenarioInputForm({
   onChange,
   disabled,
 }: ScenarioInputFormProps) {
-  const kind = value.kind ?? ""
-  const targetMonth = value.targetMonth ?? ""
-  const forecastStart = value.forecastStart ?? ""
-  const { year: tmYear, month: tmMonth } = parseYearMonth(targetMonth)
-  const { year: fsYear, month: fsMonth } = parseYearMonth(forecastStart)
+  const [localKind, setLocalKind] = useState(value.kind ?? "")
+  const [tmYear, setTmYear] = useState(() => parseYearMonth(value.targetMonth ?? "").year)
+  const [tmMonth, setTmMonth] = useState(() => parseYearMonth(value.targetMonth ?? "").month)
+  const [fsYear, setFsYear] = useState(() => parseYearMonth(value.forecastStart ?? "").year)
+  const [fsMonth, setFsMonth] = useState(() => parseYearMonth(value.forecastStart ?? "").month)
 
-  const tryBuildInput = useCallback(
-    (patch: Partial<ScenarioInput>) => {
-      const merged: Partial<ScenarioInput> = {
-        kind: (patch.kind ?? kind) as ScenarioKind | undefined,
-        targetMonth: patch.targetMonth ?? targetMonth,
-        forecastStart: patch.forecastStart !== undefined ? patch.forecastStart : forecastStart || undefined,
+  const kind = localKind
+  const targetMonth = tmYear && tmMonth ? `${tmYear}-${tmMonth}` : ""
+  const forecastStart = fsYear && fsMonth ? `${fsYear}-${fsMonth}` : ""
+
+  const tryBuildAndNotify = useCallback(
+    (candidate: { k: string; tm: string; fs: string }) => {
+      if (!candidate.k || !candidate.tm) return
+
+      const input: ScenarioInput = {
+        kind: candidate.k as ScenarioKind,
+        targetMonth: candidate.tm,
+        ...(candidate.fs ? { forecastStart: candidate.fs } : {}),
       }
 
-      if (!merged.kind || !merged.targetMonth) return
-
-      const candidate: ScenarioInput = {
-        kind: merged.kind,
-        targetMonth: merged.targetMonth,
-        ...(merged.forecastStart ? { forecastStart: merged.forecastStart } : {}),
-      }
-
-      const parsed = scenarioInputSchema.safeParse(candidate)
+      const parsed = scenarioInputSchema.safeParse(input)
       if (parsed.success) {
         onChange(parsed.data)
       }
     },
-    [kind, targetMonth, forecastStart, onChange],
+    [onChange],
   )
 
   const handleKindChange = useCallback(
     (e: ChangeEvent<HTMLSelectElement>) => {
-      tryBuildInput({ kind: e.target.value as ScenarioKind })
+      const v = e.target.value
+      setLocalKind(v)
+      tryBuildAndNotify({ k: v, tm: targetMonth, fs: forecastStart })
     },
-    [tryBuildInput],
+    [tryBuildAndNotify, targetMonth, forecastStart],
   )
 
   const handleTargetMonthYearChange = useCallback(
     (e: ChangeEvent<HTMLSelectElement>) => {
-      tryBuildInput({ targetMonth: formatYearMonth(e.target.value, tmMonth) })
+      const v = e.target.value
+      setTmYear(v)
+      const tm = v && tmMonth ? `${v}-${tmMonth}` : ""
+      tryBuildAndNotify({ k: kind, tm, fs: forecastStart })
     },
-    [tryBuildInput, tmMonth],
+    [tryBuildAndNotify, kind, tmMonth, forecastStart],
   )
 
   const handleTargetMonthMonthChange = useCallback(
     (e: ChangeEvent<HTMLSelectElement>) => {
-      tryBuildInput({ targetMonth: formatYearMonth(tmYear, e.target.value) })
+      const v = e.target.value
+      setTmMonth(v)
+      const tm = tmYear && v ? `${tmYear}-${v}` : ""
+      tryBuildAndNotify({ k: kind, tm, fs: forecastStart })
     },
-    [tryBuildInput, tmYear],
+    [tryBuildAndNotify, kind, tmYear, forecastStart],
   )
 
   const handleForecastStartYearChange = useCallback(
     (e: ChangeEvent<HTMLSelectElement>) => {
-      tryBuildInput({ forecastStart: formatYearMonth(e.target.value, fsMonth) || undefined })
+      const v = e.target.value
+      setFsYear(v)
+      const fs = v && fsMonth ? `${v}-${fsMonth}` : ""
+      tryBuildAndNotify({ k: kind, tm: targetMonth, fs })
     },
-    [tryBuildInput, fsMonth],
+    [tryBuildAndNotify, kind, targetMonth, fsMonth],
   )
 
   const handleForecastStartMonthChange = useCallback(
     (e: ChangeEvent<HTMLSelectElement>) => {
-      tryBuildInput({ forecastStart: formatYearMonth(fsYear, e.target.value) || undefined })
+      const v = e.target.value
+      setFsMonth(v)
+      const fs = fsYear && v ? `${fsYear}-${v}` : ""
+      tryBuildAndNotify({ k: kind, tm: targetMonth, fs })
     },
-    [tryBuildInput, fsYear],
+    [tryBuildAndNotify, kind, targetMonth, fsYear],
   )
 
   const showForecastStart = kind === "actual" || kind === "forecast"
