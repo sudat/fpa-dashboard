@@ -11,7 +11,9 @@
     "ses_27a1ee03cffegndexd2WkNJsVG",
     "ses_27a1edf39ffe20q9SjFj2rwwG5",
     "ses_27a02481affe3pREzfLKp4XRbf",
-    "ses_27a024a05ffeZOB3w0TOX9tHbq"
+    "ses_27a024a05ffeZOB3w0TOX9tHbq",
+    "ses_279e7b941ffeu5KbUbAUnKRKnG",
+    "ses_279e7b4daffeJXhlDF7o10NdoT"
   ],
   "plan_name": "period-scenario-selector",
   "agent": "atlas",
@@ -60,6 +62,15 @@
       "agent": "Sisyphus-Junior",
       "category": "visual-engineering",
       "updated_at": "2026-04-13T08:53:35.985Z"
+    },
+    "todo:13": {
+      "task_key": "todo:13",
+      "task_label": "13",
+      "task_title": "Remove ImportData references + cleanup",
+      "session_id": "ses_279e7b941ffeu5KbUbAUnKRKnG",
+      "agent": "Sisyphus-Junior",
+      "category": "quick",
+      "updated_at": "2026-04-13T09:09:12.502Z"
     }
   }
 }

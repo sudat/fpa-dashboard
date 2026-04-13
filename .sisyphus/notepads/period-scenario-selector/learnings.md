@@ -82,3 +82,16 @@
 - **Flex layout**: Filter bar uses `flex items-center gap-2` — compact, responsive, no wrapping.
 - **app-shell.tsx wiring**: Had to update the caller to pass new props (`targetMonth`, `selectedA/B/C`, `availableScenarios`). The `availableScenarios` is hardcoded as `["実績", "予算", "見込", "着地見込"]` — will need to be derived from actual data later.
 - **Build passes** with the wiring change. No LSP errors on analysis-header.tsx.
+
+## T7: ImportData reference cleanup
+- `grep -rn "ImportData" gas/` → 0 hits
+- `grep -rn "IMPORT_DATA" gas/` → 0 hits
+- All ImportData references were already removed by T5 and T6
+- `node -c gas/lib/upload.js` → OK
+- `bun run build` → success
+
+### 2026-04-13 Task 14 Learnings (filter → state → data flow tests)
+
+- `useAnalysisState()` + `useAnalysisData()` can be integration-tested in one harness component when ABC override creation is wrapped in `useMemo`; without memoization, a fresh override object would retrigger the data hook effect on every render.
+- For this pipeline, mocking `gasClient.getAnalysisData`, `gasClient.getUploadHistory`, and `resolveComparisonData` keeps the test focused on the wiring points: targetMonth re-fetch, abcOverride passthrough, and RESET_SELECTIONS cascade.
+- Existing fixture helper `buildUploadFromInput()` is the easiest way to create stable `UploadMetadata` objects for asserting exact `abcOverride` contents.
