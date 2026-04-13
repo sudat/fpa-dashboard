@@ -13,8 +13,9 @@ function classifyScenario(scenarioKey: string): ScenarioKind {
 
 function normalizePeriod(value: unknown): string | null {
   if (value instanceof Date) {
-    const y = value.getFullYear()
-    const m = String(value.getMonth() + 1).padStart(2, "0")
+    // SheetJS は UTC midnight で Date を作るため UTC メソッドで読む
+    const y = value.getUTCFullYear()
+    const m = String(value.getUTCMonth() + 1).padStart(2, "0")
     return `${y}-${m}`
   }
   const str = String(value ?? "").trim()
@@ -47,7 +48,6 @@ export function detectScenariosFromBase64(base64: string): DetectedScenario[] {
     rowCount: number
   }
   const grouped = new Map<string, ScenarioGroup>()
-  let latestActualMonth: string | null = null
 
   for (let i = 1; i < rows.length; i++) {
     const row = rows[i] as unknown[]
@@ -66,10 +66,6 @@ export function detectScenariosFromBase64(base64: string): DetectedScenario[] {
       g.months.push(yearMonth)
     }
     g.rowCount++
-
-    if (kind === "actual" && (!latestActualMonth || yearMonth > latestActualMonth)) {
-      latestActualMonth = yearMonth
-    }
   }
 
   const results: DetectedScenario[] = []
@@ -77,10 +73,8 @@ export function detectScenariosFromBase64(base64: string): DetectedScenario[] {
     g.months.sort()
     const latestMonth = g.months[g.months.length - 1] ?? null
 
-    let targetMonth = latestMonth ?? ""
-    if (g.kind === "forecast" && latestActualMonth) {
-      targetMonth = latestActualMonth
-    }
+    // targetMonth = そのシナリオの最新月（実績・見込どちらも同じ基準）
+    const targetMonth = latestMonth ?? ""
 
     results.push({
       kind: g.kind,

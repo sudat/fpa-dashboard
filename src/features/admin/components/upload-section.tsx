@@ -20,7 +20,6 @@ export function UploadSection() {
   const {
     state,
     selectFile,
-    preview,
     commit,
     reset,
     dismissError,
@@ -31,16 +30,10 @@ export function UploadSection() {
 
   const isTerminal = state.phase === "success" || state.phase === "error"
   const isUploading = state.phase === "uploading"
-  const isPreviewing = state.phase === "previewing"
-  const canPreview =
-    state.phase === "file_selected" &&
-    state.file !== null &&
-    state.scenarioInput !== null
   const canCommit =
     (state.phase === "file_selected" || state.phase === "warning_shown") &&
     state.fileBase64 !== null &&
     state.scenarioInput !== null &&
-    state.preview !== null &&
     !isUploading
 
   const handleFileSelect = useCallback(
@@ -153,7 +146,7 @@ export function UploadSection() {
               <ScenarioInputForm
                 detectedScenarios={state.detectedScenarios}
                 generatedLabel={state.generatedLabel}
-                isLoading={isPreviewing}
+                isLoading={false}
               />
 
               {state.preview && (
@@ -174,14 +167,6 @@ export function UploadSection() {
               )}
 
               <div className="flex items-center gap-3">
-                {canPreview && !state.preview && (
-                  <Button
-                    onClick={preview}
-                    disabled={isPreviewing}
-                  >
-                    {isPreviewing ? "プレビュー中..." : "プレビュー"}
-                  </Button>
-                )}
                 {canCommit && (
                   <Button
                     onClick={commit}
