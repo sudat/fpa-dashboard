@@ -29,7 +29,7 @@ export function AppShell() {
     <div className="flex h-screen overflow-hidden bg-background">
       <Sidebar activeNav={activeNav} onNavChange={setActiveNav} />
 
-      <main className="flex flex-1 overflow-hidden">
+      <main className="flex min-w-0 flex-1 overflow-hidden">
         <div className="flex flex-1 flex-col overflow-hidden">
           {activeNav === "analysis" ? (
             <>

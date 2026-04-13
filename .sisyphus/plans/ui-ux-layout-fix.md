@@ -392,7 +392,7 @@ Wave FINAL (After ALL tasks — 4 parallel reviews):
   - Files: `src/components/ui/button.tsx`, `src/components/ui/card.tsx`, `src/components/ui/tooltip.tsx`
   - Pre-commit: `bun run build`
 
-- [ ] 5. テーブル列幅の拡張（aggregate-accordion-table.tsx）
+- [x] 5. テーブル列幅の拡張（aggregate-accordion-table.tsx）
 
   **What to do**:
   - `src/features/analysis/components/detail/aggregate-accordion-table.tsx` のヘッダー行（115-119行）の列幅を拡張:
@@ -452,7 +452,7 @@ Wave FINAL (After ALL tasks — 4 parallel reviews):
 
   **Commit**: NO (groups with Tasks 6, 7)
 
-- [ ] 6. AnalysisHeader / TimeAxisPills スペーシング改善
+- [x] 6. AnalysisHeader / TimeAxisPills スペーシング改善
 
   **What to do**:
   - `src/features/layout/components/analysis-header.tsx`:
@@ -511,7 +511,7 @@ Wave FINAL (After ALL tasks — 4 parallel reviews):
 
   **Commit**: NO (groups with Tasks 5, 7)
 
-- [ ] 7. Admin feature の text-xs 残存修正
+- [x] 7. Admin feature の text-xs 残存修正
 
   **What to do**:
   - `src/features/admin/components/master-save-bar.tsx`:
