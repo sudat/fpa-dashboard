@@ -1,87 +1,74 @@
 {
-  "active_plan": "/usr/local/src/dev/wsl/google-apps-script/fpa-dashboard/.sisyphus/plans/admin-upload-table-radius-recovery.md",
-  "started_at": "2026-04-13T00:31:51.243Z",
+  "active_plan": "/usr/local/src/dev/wsl/google-apps-script/fpa-dashboard/.sisyphus/plans/loglass-schema-fix.md",
+  "started_at": "2026-04-13T03:07:46.754Z",
   "session_ids": [
     "ses_27df1de0cffe8lLcoa76HHZeWo",
-    "ses_27bbb76dcffencDXbvkWE2wz29",
-    "ses_27bbb7926ffeHWjUgXqq9JK35H",
-    "ses_27bb3c8d0ffePwGyPgJyWzdgYP",
-    "ses_27bb3c6b1ffeKlL2G7EYdviP93",
-    "ses_27babbac3ffeLxhJZJ8zLjBkrB",
-    "ses_27ba07c26ffeLO7FwTLhZlJA7B",
-    "ses_27ba07a21ffevVaQMJF0mspUcy",
-    "ses_27b9369f7ffevdS3ibhFY0h15o",
-    "ses_27b8ba1dcffeQ5zBejry9763lP",
-    "ses_27b7ff574ffeSgRmAw70gJcqpK",
-    "ses_27b7ff7b6ffesw2fxA2GORwCVZ",
-    "ses_27b70a1d8ffe3TeQ7apW1ync5V",
-    "ses_27b6a6199ffeViWUAisUXRQUkK"
+    "ses_27b2cd768ffecdq5BFxHwv73Iu",
+    "ses_27b219e6dffefkngrRyooo5s3J",
+    "ses_27b1a6b01ffe2J5tRz3ZO6V5JZ",
+    "ses_27b1a6e21ffe4qIpVDZRfO3j42",
+    "ses_27b15dee6ffePTISK40i3ysZBn",
+    "ses_27b0ff091ffePQhddHLmTi1AaC",
+    "ses_27af32e6dffeH5jeoE5kiZ9UEa",
+    "ses_27af332e4ffeJO8vvvFsBZfvEl",
+    "ses_27af32a34ffelaCjBFvBVE4e1e",
+    "ses_27aeae045ffetr5BiwtVIKZyBJ"
   ],
-  "plan_name": "admin-upload-table-radius-recovery",
+  "plan_name": "loglass-schema-fix",
   "agent": "atlas",
   "task_sessions": {
     "todo:1": {
       "task_key": "todo:1",
       "task_label": "1",
-      "task_title": "Freeze upload / master / analysis domain contract",
-      "session_id": "ses_27bbb7926ffeHWjUgXqq9JK35H",
+      "task_title": "Redefine loglessRawRowSchema to 10 real xlsx columns + schema tests",
+      "session_id": "ses_27b2cd768ffecdq5BFxHwv73Iu",
       "agent": "Sisyphus-Junior",
       "category": "deep",
-      "updated_at": "2026-04-13T00:41:31.684Z"
+      "updated_at": "2026-04-13T03:16:02.505Z"
     },
     "todo:2": {
       "task_key": "todo:2",
       "task_label": "2",
-      "task_title": "Add upload identity, overwrite, and A/B/C reassignment tests",
-      "session_id": "ses_27bb3c8d0ffePwGyPgJyWzdgYP",
-      "agent": "Sisyphus-Junior",
-      "category": "quick",
-      "updated_at": "2026-04-13T00:47:28.194Z"
-    },
-    "todo:5": {
-      "task_key": "todo:5",
-      "task_label": "5",
-      "task_title": "Build GAS backend upload/archive/history/master APIs",
-      "session_id": "ses_27babbac3ffeLxhJZJ8zLjBkrB",
-      "agent": "Sisyphus-Junior",
-      "category": "unspecified-high",
-      "updated_at": "2026-04-13T01:02:20.830Z"
-    },
-    "todo:7": {
-      "task_key": "todo:7",
-      "task_label": "7",
-      "task_title": "Extend current 管理 screen with real upload UI",
-      "session_id": "ses_27ba07c26ffeLO7FwTLhZlJA7B",
-      "agent": "Sisyphus-Junior",
-      "category": "visual-engineering",
-      "updated_at": "2026-04-13T01:16:41.714Z"
-    },
-    "todo:9": {
-      "task_key": "todo:9",
-      "task_label": "9",
-      "task_title": "Switch analysis source from fixture to persisted import data",
-      "session_id": "ses_27b9369f7ffevdS3ibhFY0h15o",
+      "task_title": "Create 10-col fixture factory (createLoglessRawRow)",
+      "session_id": "ses_27b219e6dffefkngrRyooo5s3J",
       "agent": "Sisyphus-Junior",
       "category": "deep",
-      "updated_at": "2026-04-13T01:26:29.204Z"
+      "updated_at": "2026-04-13T03:27:50.132Z"
     },
-    "todo:10": {
-      "task_key": "todo:10",
-      "task_label": "10",
-      "task_title": "Implement dynamic A/B/C reassignment and overwrite handling in comparison pipeline",
-      "session_id": "ses_27b8ba1dcffeQ5zBejry9763lP",
+    "todo:4": {
+      "task_key": "todo:4",
+      "task_label": "4",
+      "task_title": "Update normalizeRawRows() for 10-col input + derive fields",
+      "session_id": "ses_27b1a6e21ffe4qIpVDZRfO3j42",
       "agent": "Sisyphus-Junior",
       "category": "deep",
-      "updated_at": "2026-04-13T01:37:17.056Z"
+      "updated_at": "2026-04-13T03:34:19.123Z"
     },
-    "todo:11": {
-      "task_key": "todo:11",
-      "task_label": "11",
-      "task_title": "Rebuild detail table into aggregate accordion view",
-      "session_id": "ses_27b6a6199ffeViWUAisUXRQUkK",
+    "todo:6": {
+      "task_key": "todo:6",
+      "task_label": "6",
+      "task_title": "Restructure buildAggregateRawRows() without 集計科目名",
+      "session_id": "ses_27b15dee6ffePTISK40i3ysZBn",
+      "agent": "Sisyphus-Junior",
+      "category": "deep",
+      "updated_at": "2026-04-13T03:40:42.933Z"
+    },
+    "todo:8": {
+      "task_key": "todo:8",
+      "task_label": "8",
+      "task_title": "Fix all test fixtures and test files",
+      "session_id": "ses_27b0ff091ffePQhddHLmTi1AaC",
       "agent": "Sisyphus-Junior",
       "category": "unspecified-high",
-      "updated_at": "2026-04-13T02:18:57.221Z"
+      "updated_at": "2026-04-13T04:09:28.231Z"
+    },
+    "final-wave:f1": {
+      "task_key": "final-wave:f1",
+      "task_label": "F1",
+      "task_title": "**Schema Compliance Audit** — `oracle`",
+      "session_id": "ses_27af32e6dffeH5jeoE5kiZ9UEa",
+      "agent": "oracle",
+      "updated_at": "2026-04-13T04:20:22.973Z"
     }
   }
 }
