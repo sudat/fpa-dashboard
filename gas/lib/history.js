@@ -39,8 +39,7 @@ History.getHeader = function () {
  * @returns {Array<Object>} Array of UploadMetadata-like objects
  */
 History.getUploadHistory = function () {
-  var ssId = SheetUtils.getSpreadsheetId();
-  var rows = SheetUtils.readAllRows(ssId, HISTORY_SHEET);
+  var rows = SheetUtils.readAllRows(HISTORY_SHEET);
 
   return rows.map(function (row) {
     return {
@@ -67,8 +66,7 @@ History.getUploadHistory = function () {
  * @param {Object} metadata - UploadMetadata fields
  */
 History.addUploadEntry = function (metadata) {
-  var ssId = SheetUtils.getSpreadsheetId();
-  var sheet = SheetUtils.getOrCreateSheet(ssId, HISTORY_SHEET);
+  var sheet = SheetUtils.getOrCreateSheet(HISTORY_SHEET);
 
   if (sheet.getLastRow() === 0) {
     sheet.appendRow(HISTORY_HEADER);

@@ -44,8 +44,7 @@ Master.getDepartmentSheetName = function () {
  * @returns {Array<Object>}
  */
 Master.getAccountMaster = function () {
-  var ssId = SheetUtils.getSpreadsheetId();
-  var rows = SheetUtils.readAllRows(ssId, ACCOUNT_SHEET);
+  var rows = SheetUtils.readAllRows(ACCOUNT_SHEET);
 
   return rows.map(function (row) {
     return {
@@ -63,7 +62,6 @@ Master.getAccountMaster = function () {
  * @param {Array<Object>} entries
  */
 Master.saveAccountMaster = function (entries) {
-  var ssId = SheetUtils.getSpreadsheetId();
   var rows = [ACCOUNT_HEADER];
 
   for (var i = 0; i < entries.length; i++) {
@@ -77,7 +75,7 @@ Master.saveAccountMaster = function (entries) {
     ]);
   }
 
-  SheetUtils.writeRows(ssId, ACCOUNT_SHEET, rows);
+  SheetUtils.writeRows(ACCOUNT_SHEET, rows);
 };
 
 /**
@@ -85,8 +83,7 @@ Master.saveAccountMaster = function (entries) {
  * @returns {Array<Object>}
  */
 Master.getDepartmentMaster = function () {
-  var ssId = SheetUtils.getSpreadsheetId();
-  var rows = SheetUtils.readAllRows(ssId, DEPARTMENT_SHEET);
+  var rows = SheetUtils.readAllRows(DEPARTMENT_SHEET);
 
   return rows.map(function (row) {
     return {
@@ -103,7 +100,6 @@ Master.getDepartmentMaster = function () {
  * @param {Array<Object>} entries
  */
 Master.saveDepartmentMaster = function (entries) {
-  var ssId = SheetUtils.getSpreadsheetId();
   var rows = [DEPARTMENT_HEADER];
 
   for (var i = 0; i < entries.length; i++) {
@@ -116,5 +112,5 @@ Master.saveDepartmentMaster = function (entries) {
     ]);
   }
 
-  SheetUtils.writeRows(ssId, DEPARTMENT_SHEET, rows);
+  SheetUtils.writeRows(DEPARTMENT_SHEET, rows);
 };

@@ -175,8 +175,7 @@ Upload.commitUpload = function (workbookDataBase64, scenarioInput, confirmedRepl
   var dataRows = Upload._parseXlsx(workbookDataBase64);
   var normalizedRows = Upload._normalizeRows(dataRows);
 
-  var ssId = SheetUtils.getSpreadsheetId();
-  var sheet = SheetUtils.getOrCreateSheet(ssId, IMPORT_DATA_SHEET);
+  var sheet = SheetUtils.getOrCreateSheet(IMPORT_DATA_SHEET);
 
   if (sheet.getLastRow() === 0) {
     sheet.appendRow(IMPORT_DATA_HEADER);
@@ -255,8 +254,7 @@ Upload._normalizeRows = function (dataRows) {
  * @returns {{ importData: Array<Object>, accountMaster: Array<Object>, departmentMaster: Array<Object> }}
  */
 Upload.getAnalysisData = function (scenarioFamily, targetMonth) {
-  var ssId = SheetUtils.getSpreadsheetId();
-  var rows = SheetUtils.readAllRows(ssId, IMPORT_DATA_SHEET);
+  var rows = SheetUtils.readAllRows(IMPORT_DATA_SHEET);
 
   var filtered = rows.filter(function (row) {
     var scenario = String(row[0]).trim();

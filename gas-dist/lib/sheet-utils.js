@@ -5,28 +5,19 @@
 var SheetUtils = SheetUtils || {};
 
 /**
- * Get the spreadsheet ID from script properties.
- * Configure via: File > Project Properties > Script Properties
- * Key: SPREADSHEET_ID
+ * Get the active spreadsheet (container-bound).
  */
-SheetUtils.getSpreadsheetId = function () {
-  var id = PropertiesService.getScriptProperties().getProperty('SPREADSHEET_ID');
-  return id || 'YOUR_SPREADSHEET_ID';
-};
-
 SheetUtils.getSpreadsheet = function () {
-  var id = SheetUtils.getSpreadsheetId();
-  return SpreadsheetApp.openById(id);
+  return SpreadsheetApp.getActiveSpreadsheet();
 };
 
 /**
  * Get or create a sheet tab by name.
- * @param {string} spreadsheetId
  * @param {string} sheetName
  * @returns {GoogleAppsScript.Spreadsheet.Sheet}
  */
-SheetUtils.getOrCreateSheet = function (spreadsheetId, sheetName) {
-  var ss = SpreadsheetApp.openById(spreadsheetId);
+SheetUtils.getOrCreateSheet = function (sheetName) {
+  var ss = SheetUtils.getSpreadsheet();
   var sheet = ss.getSheetByName(sheetName);
   if (sheet) return sheet;
 
@@ -36,12 +27,11 @@ SheetUtils.getOrCreateSheet = function (spreadsheetId, sheetName) {
 
 /**
  * Read all rows (excluding header) as array of arrays.
- * @param {string} spreadsheetId
  * @param {string} sheetName
  * @returns {Array<Array<?>>}
  */
-SheetUtils.readAllRows = function (spreadsheetId, sheetName) {
-  var ss = SpreadsheetApp.openById(spreadsheetId);
+SheetUtils.readAllRows = function (sheetName) {
+  var ss = SheetUtils.getSpreadsheet();
   var sheet = ss.getSheetByName(sheetName);
   if (!sheet) return [];
 
@@ -51,15 +41,13 @@ SheetUtils.readAllRows = function (spreadsheetId, sheetName) {
 
 /**
  * Write rows to sheet (clear + write). Includes header row.
- * @param {string} spreadsheetId
  * @param {string} sheetName
  * @param {Array<Array<?>>} rows - Full rows including header at index 0
  */
-SheetUtils.writeRows = function (spreadsheetId, sheetName, rows) {
+SheetUtils.writeRows = function (sheetName, rows) {
   if (!rows || rows.length === 0) return;
 
-  var ss = SpreadsheetApp.openById(spreadsheetId);
-  var sheet = SheetUtils.getOrCreateSheet(spreadsheetId, sheetName);
+  var sheet = SheetUtils.getOrCreateSheet(sheetName);
 
   sheet.clearContents();
   sheet.getRange(1, 1, rows.length, rows[0].length).setValues(rows);
@@ -67,14 +55,13 @@ SheetUtils.writeRows = function (spreadsheetId, sheetName, rows) {
 
 /**
  * Append rows to sheet (after existing data).
- * @param {string} spreadsheetId
  * @param {string} sheetName
  * @param {Array<Array<?>>} rows - Rows to append (no header)
  */
-SheetUtils.appendRows = function (spreadsheetId, sheetName, rows) {
+SheetUtils.appendRows = function (sheetName, rows) {
   if (!rows || rows.length === 0) return;
 
-  var ss = SpreadsheetApp.openById(spreadsheetId);
+  var ss = SheetUtils.getSpreadsheet();
   var sheet = ss.getSheetByName(sheetName);
   if (!sheet) {
     sheet = ss.insertSheet(sheetName);
