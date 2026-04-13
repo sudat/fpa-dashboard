@@ -196,6 +196,9 @@ function toRawRowsFromAnalysisData(analysisDataByFamily: AnalysisData[], targetM
 }
 
 async function loadPersistedRawRows(targetMonth: string): Promise<LoglessRawRow[]> {
+  // Compatibility-first boundary: analysis still reads the sheet-backed source that current
+  // uploads persist today. When history rows become metadata-only, GAS must re-read the
+  // archived Drive original and surface access failures explicitly instead of silently dropping data.
   const analysisDataByFamily = await Promise.all(
     ANALYSIS_SCENARIO_FAMILIES.map((scenarioFamily) => gasClient.getAnalysisData(scenarioFamily, targetMonth)),
   )

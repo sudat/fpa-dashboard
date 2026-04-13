@@ -10,14 +10,32 @@ const SCENARIO_KIND_LABEL: Record<ScenarioFamily, string> = {
 
 export function generateScenarioLabel(input: ScenarioInput): string {
   const targetMonth = normalizeYearMonth(input.targetMonth);
+  const hasRangeStart = input.rangeStartMonth != null;
+  const hasRangeEnd = input.rangeEndMonth != null;
+  const rangeStartMonth = normalizeYearMonth(input.rangeStartMonth ?? input.targetMonth);
+  const rangeEndMonth = normalizeYearMonth(input.rangeEndMonth ?? input.targetMonth);
   const forecastStart = input.forecastStart ? normalizeYearMonth(input.forecastStart) : null;
+
+  if (hasRangeStart !== hasRangeEnd) {
+    throw new Error("rangeStartMonth と rangeEndMonth は両方指定してください");
+  }
+
+  if (rangeStartMonth > rangeEndMonth) {
+    throw new Error("rangeStartMonth は rangeEndMonth 以下である必要があります");
+  }
+
+  if (hasRangeEnd && rangeEndMonth !== targetMonth) {
+    throw new Error("rangeEndMonth は targetMonth と一致している必要があります");
+  }
 
   if (forecastStart !== null && forecastStart <= targetMonth) {
     throw new Error("forecastStart は targetMonth より後である必要があります");
   }
 
-  const [year, month] = targetMonth.split("-");
-  const label = `${year}/${month}月${SCENARIO_KIND_LABEL[input.kind]}`;
+  const label =
+    rangeStartMonth === rangeEndMonth
+      ? `${formatLabelMonth(targetMonth)}${SCENARIO_KIND_LABEL[input.kind]}`
+      : `${formatLabelMonth(rangeStartMonth)}〜${formatLabelMonth(rangeEndMonth)}${SCENARIO_KIND_LABEL[input.kind]}`;
 
   if (forecastStart === null) {
     return label;
@@ -65,4 +83,10 @@ function shiftYearMonth(yearMonth: string, yearDelta: number): string {
   const normalizedYearMonth = normalizeYearMonth(yearMonth);
   const [year, month] = normalizedYearMonth.split("-");
   return `${Number(year) + yearDelta}-${month}`;
+}
+
+function formatLabelMonth(yearMonth: string): string {
+  const normalizedYearMonth = normalizeYearMonth(yearMonth);
+  const [year, month] = normalizedYearMonth.split("-");
+  return `${year}/${month}月`;
 }

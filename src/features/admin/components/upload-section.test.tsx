@@ -79,4 +79,44 @@ describe("UploadSection", () => {
     expect(screen.getByText("ファイルを読み込み中...")).toBeInTheDocument()
     expect(screen.getByText("読み込み中...")).toBeInTheDocument()
   })
+
+  it("shows a range-aware upload preview when metadata is available", () => {
+    mocks.useUploadFlow.mockReturnValue({
+      state: {
+        ...baseState,
+        phase: "file_selected",
+        file: new File(["test"], "loglass.xlsx", {
+          type: "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+        }),
+        scenarioInput: {
+          kind: "actual" as const,
+          targetMonth: "2026-02",
+          rangeStartMonth: "2025-04",
+          rangeEndMonth: "2026-02",
+          forecastStart: "2026-03",
+        },
+        generatedLabel: "2025/04月〜2026/02月実績(見込:3月~)",
+        detectedScenarios: [
+          {
+            kind: "actual" as const,
+            targetMonth: "2026-02",
+            monthCount: 11,
+            rowCount: 220,
+            rangeStartMonth: "2025-04",
+            rangeEndMonth: "2026-02",
+          },
+        ],
+      },
+      selectFile: mocks.selectFile,
+      commit: mocks.commit,
+      reset: mocks.reset,
+      dismissError: mocks.dismissError,
+      dismissReplacementWarning: mocks.dismissReplacementWarning,
+    })
+
+    render(<UploadSection />)
+
+    expect(screen.getByText("2025/04月〜2026/02月実績(見込:3月~)")).toBeInTheDocument()
+    expect(screen.getByText(/2025-04〜2026-02/)).toBeInTheDocument()
+  })
 })

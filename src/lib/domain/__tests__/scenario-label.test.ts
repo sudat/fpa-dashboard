@@ -1,6 +1,7 @@
 import { describe, expect, test } from "vitest";
 
 import type { UploadMetadata } from "../upload-contract";
+import { scenarioLabelSchema } from "../upload-contract";
 import { generateScenarioLabel, resolveABC } from "../scenario-label";
 
 function createUploadMetadata(overrides: Partial<UploadMetadata> = {}): UploadMetadata {
@@ -29,8 +30,14 @@ describe("scenario-label", () => {
 
   test("generateScenarioLabel appends 見込 start for actual uploads with forecast metadata", () => {
     expect(
-      generateScenarioLabel({ kind: "actual", targetMonth: "2026-01", forecastStart: "2026-02" }),
-    ).toBe("2026/01月実績(見込:2月~)");
+      generateScenarioLabel({
+        kind: "actual",
+        targetMonth: "2026-02",
+        rangeStartMonth: "2025-04",
+        rangeEndMonth: "2026-02",
+        forecastStart: "2026-03",
+      }),
+    ).toBe("2025/04月〜2026/02月実績(見込:3月~)");
   });
 
   test("generateScenarioLabel returns 予算 label for budget target month", () => {
@@ -41,6 +48,13 @@ describe("scenario-label", () => {
     expect(
       generateScenarioLabel({ kind: "forecast", targetMonth: "2026-01", forecastStart: "2026-02" }),
     ).toBe("2026/01月見込(見込:2月~)");
+  });
+
+  test("scenarioLabelSchema accepts both legacy and range-aware labels", () => {
+    expect(scenarioLabelSchema.parse("2026/01月実績")).toBe("2026/01月実績");
+    expect(
+      scenarioLabelSchema.parse("2025/04月〜2026/02月実績(見込:3月~)"),
+    ).toBe("2025/04月〜2026/02月実績(見込:3月~)");
   });
 
   test("resolveABC maps a single upload to B", () => {

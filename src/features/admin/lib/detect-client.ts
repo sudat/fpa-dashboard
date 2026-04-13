@@ -36,6 +36,14 @@ export interface ParsedUploadWorkbook {
   detectedScenarios: DetectedScenario[]
 }
 
+type ScenarioGroup = {
+  kind: ScenarioKind
+  scenarioKey: string
+  months: string[]
+  monthSet: Set<string>
+  rowCount: number
+}
+
 function readWorkbookRows(base64: string): unknown[][] {
   const binary = atob(base64)
   const bytes = new Uint8Array(binary.length)
@@ -92,16 +100,32 @@ function parseUploadRow(row: unknown[], rowNumber: number): LoglessRawRow | null
   return parsed.data
 }
 
+function toDetectedScenario(group: ScenarioGroup, latestActualMonth: string | null): DetectedScenario {
+  group.months.sort()
+
+  const firstMonth = group.months[0] ?? ""
+  const lastMonth = group.months[group.months.length - 1] ?? ""
+  const targetMonth = group.kind === "forecast" ? latestActualMonth ?? lastMonth : lastMonth
+  const forecastStart = group.kind === "forecast"
+    ? group.months.find((month) => latestActualMonth === null || month > latestActualMonth) ?? firstMonth
+    : undefined
+
+  return {
+    kind: group.kind,
+    scenarioKey: group.scenarioKey,
+    targetMonth,
+    monthCount: group.months.length,
+    rowCount: group.rowCount,
+    firstMonth,
+    lastMonth,
+    rangeStartMonth: firstMonth,
+    rangeEndMonth: lastMonth,
+    forecastStart,
+  }
+}
+
 function buildDetectedScenariosFromRawRows(rawRows: LoglessRawRow[]): DetectedScenario[] {
   if (rawRows.length === 0) return []
-
-  type ScenarioGroup = {
-    kind: ScenarioKind
-    scenarioKey: string
-    months: string[]
-    monthSet: Set<string>
-    rowCount: number
-  }
 
   const grouped = new Map<string, ScenarioGroup>()
   let latestActualMonth: string | null = null
@@ -134,25 +158,7 @@ function buildDetectedScenariosFromRawRows(rawRows: LoglessRawRow[]): DetectedSc
   }
 
   return [...grouped.values()]
-    .map((group) => {
-      group.months.sort()
-
-      const firstMonth = group.months[0] ?? ""
-      const lastMonth = group.months[group.months.length - 1] ?? ""
-
-      return {
-        kind: group.kind,
-        scenarioKey: group.scenarioKey,
-        targetMonth: group.kind === "forecast" ? latestActualMonth ?? lastMonth : lastMonth,
-        monthCount: group.months.length,
-        rowCount: group.rowCount,
-        firstMonth,
-        lastMonth,
-        forecastStart: group.kind === "forecast"
-          ? group.months.find((month) => latestActualMonth === null || month > latestActualMonth) ?? firstMonth
-          : undefined,
-      }
-    })
+    .map((group) => toDetectedScenario(group, latestActualMonth))
     .sort((a, b) => {
       const kindDiff = KIND_ORDER[a.kind] - KIND_ORDER[b.kind]
       if (kindDiff !== 0) return kindDiff
@@ -166,14 +172,6 @@ function buildDetectedScenariosFromRawRows(rawRows: LoglessRawRow[]): DetectedSc
 
 function buildDetectedScenariosFromWorkbookRows(rows: unknown[][]): DetectedScenario[] {
   if (rows.length <= 1) return []
-
-  type ScenarioGroup = {
-    kind: ScenarioKind
-    scenarioKey: string
-    months: string[]
-    monthSet: Set<string>
-    rowCount: number
-  }
 
   const grouped = new Map<string, ScenarioGroup>()
   let latestActualMonth: string | null = null
@@ -210,25 +208,7 @@ function buildDetectedScenariosFromWorkbookRows(rows: unknown[][]): DetectedScen
   }
 
   return [...grouped.values()]
-    .map((group) => {
-      group.months.sort()
-
-      const firstMonth = group.months[0] ?? ""
-      const lastMonth = group.months[group.months.length - 1] ?? ""
-
-      return {
-        kind: group.kind,
-        scenarioKey: group.scenarioKey,
-        targetMonth: group.kind === "forecast" ? latestActualMonth ?? lastMonth : lastMonth,
-        monthCount: group.months.length,
-        rowCount: group.rowCount,
-        firstMonth,
-        lastMonth,
-        forecastStart: group.kind === "forecast"
-          ? group.months.find((month) => latestActualMonth === null || month > latestActualMonth) ?? firstMonth
-          : undefined,
-      }
-    })
+    .map((group) => toDetectedScenario(group, latestActualMonth))
     .sort((a, b) => {
       const kindDiff = KIND_ORDER[a.kind] - KIND_ORDER[b.kind]
       if (kindDiff !== 0) return kindDiff

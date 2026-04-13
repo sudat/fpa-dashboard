@@ -65,7 +65,7 @@ Detect.scanScenarios = function (dataRows) {
 /**
  * Detect scenario inputs from XLSX data.
  * Returns array of
- * { kind, targetMonth, scenarioKey, monthCount, rowCount, firstMonth, lastMonth, forecastStart? }.
+ * { kind, targetMonth, scenarioKey, monthCount, rowCount, firstMonth, lastMonth, rangeStartMonth, rangeEndMonth, forecastStart? }.
  */
 Detect.detectScenarioInputs = function (dataRows) {
   var scanned = Detect.scanScenarios(dataRows || []);
@@ -116,6 +116,8 @@ Detect.detectScenarioInputs = function (dataRows) {
         rowCount: summary.rowCount,
         firstMonth: firstMonth,
         lastMonth: latestScenarioMonth,
+        rangeStartMonth: firstMonth,
+        rangeEndMonth: latestScenarioMonth,
       };
 
       if (summary.kind === 'actual') {
