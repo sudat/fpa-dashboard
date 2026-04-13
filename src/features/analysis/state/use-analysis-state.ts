@@ -14,6 +14,10 @@ export interface AnalysisState {
   metricMode: "amount" | "gmvRatio"
   weakLinkTarget: WeakLinkTarget | null
   activeSubView: "trend" | "table"
+  targetMonth: string
+  selectedA: string | null
+  selectedB: string | null
+  selectedC: string | null
 }
 
 export type AnalysisAction =
@@ -24,6 +28,10 @@ export type AnalysisAction =
   | { type: "SET_WEAK_LINK_TARGET"; payload: WeakLinkTarget | null }
   | { type: "CLEAR_WEAK_LINK_TARGET" }
   | { type: "SET_ACTIVE_SUB_VIEW"; payload: "trend" | "table" }
+  | { type: "SET_TARGET_MONTH"; payload: string }
+  | { type: "SET_SELECTED_A"; payload: string | null }
+  | { type: "SET_SELECTED_B"; payload: string | null }
+  | { type: "SET_SELECTED_C"; payload: string | null }
   | { type: "RESET_SELECTIONS" }
 
 export const DEFAULT_STATE: AnalysisState = {
@@ -33,6 +41,10 @@ export const DEFAULT_STATE: AnalysisState = {
   metricMode: "amount",
   weakLinkTarget: null,
   activeSubView: "trend",
+  targetMonth: "2026-02",
+  selectedA: null,
+  selectedB: null,
+  selectedC: null,
 }
 
 function analysisReducer(state: AnalysisState, action: AnalysisAction): AnalysisState {
@@ -51,6 +63,14 @@ function analysisReducer(state: AnalysisState, action: AnalysisAction): Analysis
       return { ...state, weakLinkTarget: null }
     case "SET_ACTIVE_SUB_VIEW":
       return { ...state, activeSubView: action.payload }
+    case "SET_TARGET_MONTH":
+      return { ...state, targetMonth: action.payload, selectedA: null, selectedB: null, selectedC: null }
+    case "SET_SELECTED_A":
+      return { ...state, selectedA: action.payload }
+    case "SET_SELECTED_B":
+      return { ...state, selectedB: action.payload }
+    case "SET_SELECTED_C":
+      return { ...state, selectedC: action.payload }
     case "RESET_SELECTIONS":
       return { ...DEFAULT_STATE, activeOrgTab: state.activeOrgTab, activeTimeAxis: state.activeTimeAxis }
     default:
@@ -67,6 +87,10 @@ export interface AnalysisActions {
   setMetricMode: (mode: "amount" | "gmvRatio") => void
   setWeakLinkTarget: (target: WeakLinkTarget | null) => void
   setActiveSubView: (view: "trend" | "table") => void
+  setTargetMonth: (month: string) => void
+  setSelectedA: (a: string | null) => void
+  setSelectedB: (b: string | null) => void
+  setSelectedC: (c: string | null) => void
   resetSelections: () => void
 }
 
@@ -105,6 +129,22 @@ export function useAnalysisState(): [AnalysisState, AnalysisActions] {
     dispatch({ type: "SET_ACTIVE_SUB_VIEW", payload: view })
   }, [])
 
+  const setTargetMonth = useCallback((month: string) => {
+    dispatch({ type: "SET_TARGET_MONTH", payload: month })
+  }, [])
+
+  const setSelectedA = useCallback((a: string | null) => {
+    dispatch({ type: "SET_SELECTED_A", payload: a })
+  }, [])
+
+  const setSelectedB = useCallback((b: string | null) => {
+    dispatch({ type: "SET_SELECTED_B", payload: b })
+  }, [])
+
+  const setSelectedC = useCallback((c: string | null) => {
+    dispatch({ type: "SET_SELECTED_C", payload: c })
+  }, [])
+
   const resetSelections = useCallback(() => {
     dispatch({ type: "RESET_SELECTIONS" })
   }, [])
@@ -118,6 +158,10 @@ export function useAnalysisState(): [AnalysisState, AnalysisActions] {
       setMetricMode,
       setWeakLinkTarget,
       setActiveSubView,
+      setTargetMonth,
+      setSelectedA,
+      setSelectedB,
+      setSelectedC,
       resetSelections,
     },
   ]

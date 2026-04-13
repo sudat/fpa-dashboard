@@ -153,4 +153,111 @@ describe("useAnalysisState", () => {
     })
     expect(result.current[0].weakLinkTarget).toBeNull()
   })
+
+  it("default state includes targetMonth, selectedA, selectedB, selectedC", () => {
+    const { result } = renderHook(() => useAnalysisState())
+    const [state] = result.current
+
+    expect(state.targetMonth).toBe("2026-02")
+    expect(state.selectedA).toBeNull()
+    expect(state.selectedB).toBeNull()
+    expect(state.selectedC).toBeNull()
+  })
+
+  it("setTargetMonth updates targetMonth", () => {
+    const { result } = renderHook(() => useAnalysisState())
+
+    act(() => {
+      result.current[1].setTargetMonth("2026-03")
+    })
+
+    expect(result.current[0].targetMonth).toBe("2026-03")
+  })
+
+  it("setTargetMonth resets selectedA/B/C to null", () => {
+    const { result } = renderHook(() => useAnalysisState())
+
+    act(() => {
+      result.current[1].setSelectedA("予算")
+      result.current[1].setSelectedB("見込")
+      result.current[1].setSelectedC("実績")
+    })
+
+    expect(result.current[0].selectedA).toBe("予算")
+    expect(result.current[0].selectedB).toBe("見込")
+    expect(result.current[0].selectedC).toBe("実績")
+
+    act(() => {
+      result.current[1].setTargetMonth("2026-03")
+    })
+
+    const [state] = result.current
+    expect(state.targetMonth).toBe("2026-03")
+    expect(state.selectedA).toBeNull()
+    expect(state.selectedB).toBeNull()
+    expect(state.selectedC).toBeNull()
+  })
+
+  it("setSelectedA updates selectedA", () => {
+    const { result } = renderHook(() => useAnalysisState())
+
+    act(() => {
+      result.current[1].setSelectedA("予算")
+    })
+    expect(result.current[0].selectedA).toBe("予算")
+
+    act(() => {
+      result.current[1].setSelectedA("見込")
+    })
+    expect(result.current[0].selectedA).toBe("見込")
+  })
+
+  it("setSelectedB updates selectedB", () => {
+    const { result } = renderHook(() => useAnalysisState())
+
+    act(() => {
+      result.current[1].setSelectedB("見込")
+    })
+    expect(result.current[0].selectedB).toBe("見込")
+
+    act(() => {
+      result.current[1].setSelectedB("実績")
+    })
+    expect(result.current[0].selectedB).toBe("実績")
+  })
+
+  it("setSelectedC updates selectedC", () => {
+    const { result } = renderHook(() => useAnalysisState())
+
+    act(() => {
+      result.current[1].setSelectedC("実績")
+    })
+    expect(result.current[0].selectedC).toBe("実績")
+
+    act(() => {
+      result.current[1].setSelectedC("予算")
+    })
+    expect(result.current[0].selectedC).toBe("予算")
+  })
+
+  it("resetSelections resets targetMonth and ABC selections to defaults", () => {
+    const { result } = renderHook(() => useAnalysisState())
+
+    act(() => {
+      result.current[1].setTargetMonth("2026-03")
+      result.current[1].setSelectedA("予算")
+      result.current[1].setSelectedB("見込")
+      result.current[1].setSelectedC("実績")
+    })
+
+    act(() => {
+      result.current[1].resetSelections()
+    })
+
+    const [state] = result.current
+    expect(state.targetMonth).toBe("2026-02")
+    expect(state.selectedA).toBeNull()
+    expect(state.selectedB).toBeNull()
+    expect(state.selectedC).toBeNull()
+  })
 })
