@@ -68,8 +68,8 @@ function getDisplayRange(scenario: DetectedScenario): {
   startMonth: string
   endMonth: string
 } {
-  const endMonth = scenario.lastMonth ?? scenario.targetMonth
-  const startMonth = scenario.firstMonth ?? shiftYearMonth(endMonth, -(scenario.monthCount - 1))
+  const endMonth = scenario.rangeEndMonth ?? scenario.lastMonth ?? scenario.targetMonth
+  const startMonth = scenario.rangeStartMonth ?? scenario.firstMonth ?? shiftYearMonth(endMonth, -(scenario.monthCount - 1))
   return { startMonth, endMonth }
 }
 

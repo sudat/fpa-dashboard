@@ -72,7 +72,7 @@ export function selectGmvRatios(
 ): GmvRatioRow[] {
   const majorAccountNames = getMajorAccountNames();
   const majorAccountSet = new Set(majorAccountNames);
-  const gmvAccountSet = new Set(GMV_ACCOUNT_NAMES);
+  const gmvAccountSet = new Set<string>(GMV_ACCOUNT_NAMES);
   const filteredComparisonData = applyBucketFilter(comparisonData)
     .filter((row) => row.periodType === periodType)
     .filter((row) => parseComparisonRowKey(row.rowKey).departmentCode === departmentCode);

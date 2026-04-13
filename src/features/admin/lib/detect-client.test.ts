@@ -30,6 +30,8 @@ describe("detectScenariosFromBase64", () => {
         rowCount: 3,
         firstMonth: "2025-04",
         lastMonth: "2026-02",
+        rangeStartMonth: "2025-04",
+        rangeEndMonth: "2026-02",
         forecastStart: undefined,
       },
       {
@@ -40,6 +42,8 @@ describe("detectScenariosFromBase64", () => {
         rowCount: 2,
         firstMonth: "2026-03",
         lastMonth: "2026-03",
+        rangeStartMonth: "2026-03",
+        rangeEndMonth: "2026-03",
         forecastStart: "2026-03",
       },
     ])

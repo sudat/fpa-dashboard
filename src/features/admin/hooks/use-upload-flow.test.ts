@@ -54,6 +54,8 @@ function createDetectedScenarios() {
       targetMonth: "2026-02",
       monthCount: 11,
       rowCount: 220,
+      rangeStartMonth: "2025-04",
+      rangeEndMonth: "2026-02",
       firstMonth: "2025-04",
       lastMonth: "2026-02",
       scenarioKey: "実績",
@@ -63,10 +65,28 @@ function createDetectedScenarios() {
       targetMonth: "2026-02",
       monthCount: 1,
       rowCount: 20,
+      rangeStartMonth: "2026-03",
+      rangeEndMonth: "2026-03",
       firstMonth: "2026-03",
       lastMonth: "2026-03",
       forecastStart: "2026-03",
       scenarioKey: "26年3月期着地見込0224時点",
+    },
+  ]
+}
+
+function createActualOnlyDetectedScenarios() {
+  return [
+    {
+      kind: "actual" as const,
+      targetMonth: "2026-02",
+      monthCount: 11,
+      rowCount: 220,
+      rangeStartMonth: "2025-04",
+      rangeEndMonth: "2026-02",
+      firstMonth: "2025-04",
+      lastMonth: "2026-02",
+      scenarioKey: "実績",
     },
   ]
 }
@@ -96,12 +116,18 @@ function createUploadMetadata() {
     scenarioInput: {
       kind: "actual" as const,
       targetMonth: "2026-02",
+      rangeStartMonth: "2025-04",
+      rangeEndMonth: "2026-02",
       forecastStart: "2026-03",
     },
-    generatedLabel: "2026/02月実績(見込:3月~)",
+    generatedLabel: "2025/04月〜2026/02月実績(見込:3月~)",
     replacementIdentity: {
-      generatedLabel: "2026/02月実績(見込:3月~)",
+      generatedLabel: "2025/04月〜2026/02月実績(見込:3月~)",
       scenarioFamily: "actual" as const,
+      rangeStartMonth: "2025-04",
+      rangeEndMonth: "2026-02",
+      forecastStart: "2026-03",
+      identityKey: "actual::2025-04::2026-02::2026-03",
     },
     fileName: "actual_2026-02.xlsx",
   }
@@ -155,10 +181,30 @@ describe("useUploadFlow", () => {
     expect(result.current.state.scenarioInput).toEqual({
       kind: "actual",
       targetMonth: "2026-02",
+      rangeStartMonth: "2025-04",
+      rangeEndMonth: "2026-02",
       forecastStart: "2026-03",
     })
-    expect(result.current.state.generatedLabel).toBe("2026/02月実績(見込:3月~)")
+    expect(result.current.state.generatedLabel).toBe("2025/04月〜2026/02月実績(見込:3月~)")
     expect(mocks.parseUploadWorkbookFromBase64).not.toHaveBeenCalled()
+  })
+
+  it("auto-populates a range label from actual rows when no forecast rows exist", async () => {
+    const { result } = renderHook(() => useUploadFlow())
+    mocks.detectScenariosFromBase64.mockReturnValueOnce(createActualOnlyDetectedScenarios())
+
+    await act(async () => {
+      await result.current.selectFile(createFile())
+      await Promise.resolve()
+    })
+
+    expect(result.current.state.scenarioInput).toEqual({
+      kind: "actual",
+      targetMonth: "2026-02",
+      rangeStartMonth: "2025-04",
+      rangeEndMonth: "2026-02",
+    })
+    expect(result.current.state.generatedLabel).toBe("2025/04月〜2026/02月実績")
   })
 
   it("sets a reading state while FileReader is still pending", async () => {
@@ -237,7 +283,7 @@ describe("useUploadFlow", () => {
     })
 
     expect(result.current.state.phase).toBe("success")
-    expect(result.current.state.result?.generatedLabel).toBe("2026/02月実績(見込:3月~)")
+    expect(result.current.state.result?.generatedLabel).toBe("2025/04月〜2026/02月実績(見込:3月~)")
     expect(mocks.startUploadSession).toHaveBeenCalledTimes(1)
     expect(mocks.parseUploadWorkbookFromBase64).toHaveBeenCalledWith("dGVzdA==")
     expect(mocks.startUploadSession).toHaveBeenCalledWith(
@@ -246,6 +292,8 @@ describe("useUploadFlow", () => {
       {
         kind: "actual",
         targetMonth: "2026-02",
+        rangeStartMonth: "2025-04",
+        rangeEndMonth: "2026-02",
         forecastStart: "2026-03",
       },
       expect.objectContaining({

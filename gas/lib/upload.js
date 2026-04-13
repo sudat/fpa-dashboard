@@ -61,19 +61,64 @@ Upload._normalizePeriod = function (value) {
   return null;
 };
 
+Upload._normalizeScenarioInput = function (scenarioInput) {
+  if (!scenarioInput || !scenarioInput.kind) {
+    throw new Error('scenarioInput.kind は必須です。');
+  }
+
+  var targetMonth = Upload._normalizePeriod(scenarioInput.targetMonth);
+  var hasRangeStart = !!scenarioInput.rangeStartMonth;
+  var hasRangeEnd = !!scenarioInput.rangeEndMonth;
+  var rangeStartMonth = Upload._normalizePeriod(scenarioInput.rangeStartMonth || targetMonth);
+  var rangeEndMonth = Upload._normalizePeriod(scenarioInput.rangeEndMonth || targetMonth);
+  var forecastStart = scenarioInput.forecastStart ? Upload._normalizePeriod(scenarioInput.forecastStart) : '';
+
+  if (!targetMonth || !rangeStartMonth || !rangeEndMonth) {
+    throw new Error('scenarioInput の年月メタデータが不正です。');
+  }
+
+  if (hasRangeStart !== hasRangeEnd) {
+    throw new Error('rangeStartMonth と rangeEndMonth は両方指定してください。');
+  }
+
+  if (rangeStartMonth > rangeEndMonth) {
+    throw new Error('rangeStartMonth は rangeEndMonth 以下である必要があります。');
+  }
+
+  if (hasRangeEnd && rangeEndMonth !== targetMonth) {
+    throw new Error('rangeEndMonth は targetMonth と一致している必要があります。');
+  }
+
+  if (forecastStart && forecastStart <= targetMonth) {
+    throw new Error('forecastStart は targetMonth より後である必要があります。');
+  }
+
+  return {
+    kind: String(scenarioInput.kind),
+    targetMonth: targetMonth,
+    rangeStartMonth: rangeStartMonth,
+    rangeEndMonth: rangeEndMonth,
+    forecastStart: forecastStart || undefined,
+  };
+};
+
+Upload._formatLabelMonth = function (yearMonth) {
+  var parts = Upload._normalizePeriod(yearMonth).split('-');
+  return parts[0] + '/' + parts[1] + '月';
+};
+
 /**
  * Generate scenario label from scenarioInput.
  * Mirrors domain generateScenarioLabel().
  */
 Upload._generateScenarioLabel = function (scenarioInput) {
-  var targetMonth = Upload._normalizePeriod(scenarioInput.targetMonth);
-  var parts = targetMonth.split('-');
-  var year = parts[0];
-  var month = parts[1];
-  var label = year + '/' + month + '月' + SCENARIO_KIND_LABEL[scenarioInput.kind];
+  var normalized = Upload._normalizeScenarioInput(scenarioInput);
+  var label = normalized.rangeStartMonth === normalized.rangeEndMonth
+    ? Upload._formatLabelMonth(normalized.targetMonth) + SCENARIO_KIND_LABEL[normalized.kind]
+    : Upload._formatLabelMonth(normalized.rangeStartMonth) + '〜' + Upload._formatLabelMonth(normalized.rangeEndMonth) + SCENARIO_KIND_LABEL[normalized.kind];
 
-  if (scenarioInput.forecastStart) {
-    var fs = Upload._normalizePeriod(scenarioInput.forecastStart);
+  if (normalized.forecastStart) {
+    var fs = Upload._normalizePeriod(normalized.forecastStart);
     var fParts = fs.split('-');
     var fMonth = String(Number(fParts[1]));
     label = label + '(見込:' + fMonth + '月~)';
@@ -227,9 +272,42 @@ Upload._isDomainPolicyDisabledError = function (error) {
   return message.indexOf('ドメイン管理者') >= 0 || message.indexOf('domain administrator') >= 0;
 };
 
+/**
+ * Compatibility boundary:
+ * - Existing and current uploads remain sheet-backed for analysis reads.
+ * - Future metadata-only rows are expected to re-read the archived Drive original.
+ * - Until that reader lands, missing sheetName is treated as an explicit failure.
+ */
+Upload._readPersistedUploadRows = function (entry) {
+  var sheetName = String(entry.sheetName || '').trim();
+  if (sheetName) {
+    return SheetUtils.readAllRows(sheetName);
+  }
+
+  var driveFileId = String(entry.driveFileId || '').trim();
+  if (driveFileId) {
+    var requestedTargetMonth = arguments.length > 1 ? Upload._normalizePeriod(arguments[1]) : '';
+    var scenarioInput = entry.scenarioInput || {};
+    var rangeStartMonth = Upload._normalizePeriod(scenarioInput.rangeStartMonth || scenarioInput.targetMonth);
+    var rangeEndMonth = Upload._normalizePeriod(scenarioInput.rangeEndMonth || scenarioInput.targetMonth);
+
+    if (requestedTargetMonth && rangeStartMonth && rangeEndMonth) {
+      if (requestedTargetMonth < rangeStartMonth || requestedTargetMonth > rangeEndMonth) {
+        return [];
+      }
+    }
+
+    throw new Error('metadata-only アップロードの分析読込は未実装です。Drive 原本の再読込が必要です。');
+  }
+
+  throw new Error('アップロード履歴に分析用データの参照先がありません。');
+};
+
 Upload.startUploadSession = function (workbookBase64, originalFileName, scenarioInput, confirmedReplacement) {
-  var generatedLabel = Upload._generateScenarioLabel(scenarioInput);
-  var conflict = History.findReplacementConflict(generatedLabel, scenarioInput.kind);
+  var normalizedScenarioInput = Upload._normalizeScenarioInput(scenarioInput);
+  var generatedLabel = Upload._generateScenarioLabel(normalizedScenarioInput);
+  var replacementIdentity = History.buildReplacementIdentity(normalizedScenarioInput, generatedLabel);
+  var conflict = History.findReplacementConflict(replacementIdentity);
   if (conflict && !confirmedReplacement) {
     throw new Error('上書き確認が必要です。replacementWarning を確認してください。');
   }
@@ -243,7 +321,7 @@ Upload.startUploadSession = function (workbookBase64, originalFileName, scenario
   var timestamp = SheetUtils.now();
   var uploadId = SheetUtils.generateId();
   var sheetName = 'upload_' + uploadId;
-  var normalizedFileName = String(originalFileName || '').trim() || (scenarioInput.kind + '_' + scenarioInput.targetMonth + '.xlsx');
+  var normalizedFileName = String(originalFileName || '').trim() || (normalizedScenarioInput.kind + '_' + normalizedScenarioInput.targetMonth + '.xlsx');
   var workbookBlob = Upload._createWorkbookBlob(workbookBase64, originalFileName);
   var archiveFile = null;
   var sheetInitialized = false;
@@ -251,16 +329,9 @@ Upload.startUploadSession = function (workbookBase64, originalFileName, scenario
     uploadId: uploadId,
     timestamp: timestamp,
     uploader: uploader,
-    scenarioInput: {
-      kind: scenarioInput.kind,
-      targetMonth: scenarioInput.targetMonth,
-      forecastStart: scenarioInput.forecastStart || undefined,
-    },
+    scenarioInput: normalizedScenarioInput,
     generatedLabel: generatedLabel,
-    replacementIdentity: {
-      generatedLabel: generatedLabel,
-      scenarioFamily: scenarioInput.kind,
-    },
+    replacementIdentity: replacementIdentity,
     fileName: normalizedFileName,
     driveFileId: '',
     rowCount: 0,
@@ -332,8 +403,7 @@ Upload.finalizeUploadSession = function (uploadId) {
   }
 
   var conflict = History.findReplacementConflict(
-    session.generatedLabel,
-    session.replacementIdentity.scenarioFamily
+    session.replacementIdentity
   );
 
   if (conflict && !session.replacementUploadId) {
@@ -347,7 +417,9 @@ Upload.finalizeUploadSession = function (uploadId) {
   }
 
   if (conflict && session.replacementUploadId) {
-    Upload._deleteSheetIfExists(conflict.sheetName || ('upload_' + conflict.uploadId));
+    if (conflict.sheetName) {
+      Upload._deleteSheetIfExists(conflict.sheetName);
+    }
   }
 
   History.addUploadEntry({
@@ -392,8 +464,7 @@ Upload.getAnalysisData = function (scenarioFamily, targetMonth) {
       continue;
     }
 
-    var sheetName = entry.sheetName || ('upload_' + entry.uploadId);
-    var sheetRows = SheetUtils.readAllRows(sheetName);
+    var sheetRows = Upload._readPersistedUploadRows(entry, normalizedTargetMonth);
     if (sheetRows.length === 0) {
       continue;
     }

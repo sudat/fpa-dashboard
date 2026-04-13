@@ -1,6 +1,6 @@
 import { useState, useCallback, useRef } from "react"
 import type { ScenarioKind, ScenarioInput, ReplacementWarning, UploadMetadata } from "@/lib/domain/upload-contract"
-import { computeReplacementIdentity, scenarioInputSchema } from "@/lib/domain/upload-contract"
+import { buildReplacementIdentity, computeReplacementIdentity, scenarioInputSchema } from "@/lib/domain/upload-contract"
 import { gasClient, isGasAvailable } from "@/lib/gas/gas-client"
 import { generateScenarioLabel } from "@/lib/domain/scenario-label"
 import { detectScenariosFromBase64, parseUploadWorkbookFromBase64 } from "../lib/detect-client"
@@ -21,6 +21,8 @@ export interface DetectedScenario {
   monthCount: number
   rowCount: number
   scenarioKey?: string
+  rangeStartMonth?: string
+  rangeEndMonth?: string
   firstMonth?: string
   lastMonth?: string
   forecastStart?: string
@@ -59,10 +61,7 @@ function mockCommitUpload(fileName: string, input: ScenarioInput, confirmedRepla
     uploader: "mock-user@example.com",
     scenarioInput: input,
     generatedLabel: label,
-    replacementIdentity: {
-      generatedLabel: label,
-      scenarioFamily: input.kind,
-    },
+    replacementIdentity: buildReplacementIdentity(input),
     fileName,
   }
 }
@@ -92,10 +91,12 @@ function autoPopulateFromDetected(detected: DetectedScenario[] | null): {
 
   const actual = detected.find((scenario) => scenario.kind === "actual")
   const primary = actual ?? detected[0]
+  const rangeStartMonth = primary.rangeStartMonth ?? primary.firstMonth ?? primary.targetMonth
+  const rangeEndMonth = primary.rangeEndMonth ?? primary.lastMonth ?? primary.targetMonth
   const forecastStart = primary.kind === "actual"
     ? [...detected]
       .filter((scenario) => scenario.kind === "forecast")
-      .map((scenario) => scenario.forecastStart ?? scenario.firstMonth ?? null)
+      .map((scenario) => scenario.forecastStart ?? scenario.rangeStartMonth ?? scenario.firstMonth ?? null)
       .filter((value): value is string => value !== null && value > primary.targetMonth)
       .sort((left, right) => left.localeCompare(right, "ja"))[0]
     : primary.forecastStart
@@ -106,11 +107,15 @@ function autoPopulateFromDetected(detected: DetectedScenario[] | null): {
         ? {
           kind: primary.kind,
           targetMonth: primary.targetMonth,
+          rangeStartMonth,
+          rangeEndMonth,
           forecastStart,
         }
         : {
           kind: primary.kind,
           targetMonth: primary.targetMonth,
+          rangeStartMonth,
+          rangeEndMonth,
         },
     )
 

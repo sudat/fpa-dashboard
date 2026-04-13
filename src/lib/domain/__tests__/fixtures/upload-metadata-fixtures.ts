@@ -1,4 +1,5 @@
-import type { UploadMetadata } from "../../upload-contract";
+import type { ScenarioInput, UploadMetadata } from "../../upload-contract";
+import { buildReplacementIdentity } from "../../upload-contract";
 import { generateScenarioLabel } from "../../scenario-label";
 
 /**
@@ -6,30 +7,35 @@ import { generateScenarioLabel } from "../../scenario-label";
  * Deep-merges overrides including nested scenarioInput and replacementIdentity.
  */
 export function createUploadMetadata(overrides: Partial<UploadMetadata> = {}): UploadMetadata {
+  const defaultScenarioInput: ScenarioInput = {
+    kind: "actual",
+    targetMonth: "2026-01",
+  };
+  const scenarioInput: ScenarioInput = {
+    ...defaultScenarioInput,
+    ...overrides.scenarioInput,
+  };
+  const generatedLabel = overrides.generatedLabel ?? generateScenarioLabel(scenarioInput);
+  const replacementIdentity = {
+    ...buildReplacementIdentity(scenarioInput),
+    ...overrides.replacementIdentity,
+  };
   const defaults: UploadMetadata = {
     uploadId: "upload-1",
     timestamp: "2026-01-31T00:00:00.000Z",
     uploader: "fpa@example.com",
     fileName: "2026-01.xlsx",
-    scenarioInput: {
-      kind: "actual",
-      targetMonth: "2026-01",
-    },
-    generatedLabel: "2026/01月実績",
-    replacementIdentity: {
-      generatedLabel: "2026/01月実績",
-      scenarioFamily: "actual",
-    },
+    scenarioInput,
+    generatedLabel,
+    replacementIdentity,
   };
 
   return {
     ...defaults,
     ...overrides,
-    scenarioInput: { ...defaults.scenarioInput, ...overrides.scenarioInput },
-    replacementIdentity: {
-      ...defaults.replacementIdentity,
-      ...overrides.replacementIdentity,
-    },
+    scenarioInput,
+    generatedLabel,
+    replacementIdentity,
   };
 }
 
@@ -38,18 +44,12 @@ export function createUploadMetadata(overrides: Partial<UploadMetadata> = {}): U
  * and replacementIdentity via the real domain functions.
  */
 export function buildUploadFromInput(
-  input: { kind: "actual" | "budget" | "forecast"; targetMonth: string; forecastStart?: string },
+  input: ScenarioInput,
   overrides: Partial<Omit<UploadMetadata, "scenarioInput" | "generatedLabel" | "replacementIdentity">> = {},
 ): UploadMetadata {
-  const generatedLabel = generateScenarioLabel(input);
   return createUploadMetadata({
     ...overrides,
     scenarioInput: input,
-    generatedLabel,
-    replacementIdentity: {
-      generatedLabel,
-      scenarioFamily: input.kind,
-    },
   });
 }
 
